@@ -30,6 +30,10 @@ export default function FeedScreen() {
   const loadData = useCallback(async () => {
     try {
       const stored = await getStoredUser();
+      if (!stored || !stored.token) {
+        router.replace('/auth/login');
+        return;
+      }
       setUser(stored);
 
       const params: any = {};
@@ -38,13 +42,16 @@ export default function FeedScreen() {
 
       const data = await fetchPosts(params);
       setPosts(data);
-    } catch (e) {
+    } catch (e: any) {
       console.warn('Failed to load posts', e);
+      if (e?.response?.status === 401) {
+        router.replace('/auth/login');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [filterType, searchQuery]);
+  }, [filterType, searchQuery, router]);
 
   useEffect(() => {
     loadData();

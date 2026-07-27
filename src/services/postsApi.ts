@@ -33,27 +33,32 @@ export const fetchPosts = async (params?: {
   query?: string;
   scope_id?: string;
 }): Promise<PostUI[]> => {
-  const response = await api.get<PostApi[]>('/posts', { params });
-  return (response.data || []).map(transformPostApiToUI);
+  const response = await api.get<any>('/posts', { params });
+  const raw = response.data?.data ?? response.data;
+  const list = Array.isArray(raw) ? raw : [];
+  return list.map(transformPostApiToUI);
 };
 
 export const fetchPostById = async (postId: string): Promise<PostUI> => {
-  const response = await api.get<PostApi>(`/posts/${postId}`);
-  return transformPostApiToUI(response.data);
+  const response = await api.get<any>(`/posts/${postId}`);
+  const raw = response.data?.data ?? response.data;
+  return transformPostApiToUI(raw);
 };
 
 export const createPostApi = async (formData: FormData): Promise<{ postId: string }> => {
-  const response = await api.post<{ postId: string; message: string }>('/posts', formData, {
+  const response = await api.post<any>('/posts', formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   });
-  return response.data;
+  return response.data?.data ?? response.data;
 };
 
 export const fetchPostComments = async (postId: string): Promise<CommentUI[]> => {
-  const response = await api.get<any[]>(`/posts/${postId}/comments`);
-  return (response.data || []).map((c) => ({
+  const response = await api.get<any>(`/posts/${postId}/comments`);
+  const raw = response.data?.data ?? response.data;
+  const list = Array.isArray(raw) ? raw : [];
+  return list.map((c: any) => ({
     commentId: String(c.commentId || c.comment_id),
     postId: String(c.postId || c.post_id),
     userId: String(c.userId || c.user_id),
@@ -67,7 +72,7 @@ export const fetchPostComments = async (postId: string): Promise<CommentUI[]> =>
 
 export const createPostComment = async (postId: string, content: string): Promise<CommentUI> => {
   const response = await api.post(`/posts/${postId}/comments`, { content });
-  const c = response.data;
+  const c = response.data?.data ?? response.data;
   return {
     commentId: String(c.commentId || c.comment_id),
     postId: String(c.postId || c.post_id),

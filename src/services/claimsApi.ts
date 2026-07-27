@@ -11,7 +11,9 @@ export const createClaim = async (postId: string, claimMessage: string): Promise
 
 export const fetchReceivedClaims = async (): Promise<ClaimUI[]> => {
   const response = await api.get('/claims/received');
-  return (response.data || []).map((c: any) => ({
+  const raw = response.data?.data ?? response.data;
+  const list = Array.isArray(raw) ? raw : [];
+  return list.map((c: any) => ({
     claimId: String(c.claimId || c.claim_id),
     publicId: c.publicId || c.public_id,
     postId: String(c.postId || c.post_id),
@@ -30,7 +32,9 @@ export const fetchReceivedClaims = async (): Promise<ClaimUI[]> => {
 
 export const fetchMyClaims = async (): Promise<ClaimUI[]> => {
   const response = await api.get('/claims/my-claims');
-  return (response.data || []).map((c: any) => ({
+  const raw = response.data?.data ?? response.data;
+  const list = Array.isArray(raw) ? raw : [];
+  return list.map((c: any) => ({
     claimId: String(c.claimId || c.claim_id),
     publicId: c.publicId || c.public_id,
     postId: String(c.postId || c.post_id),
@@ -52,7 +56,9 @@ export const updateClaimStatus = async (claimPublicId: string, status: string): 
 
 export const fetchChatMessages = async (claimPublicId: string): Promise<ChatMessageUI[]> => {
   const response = await api.get(`/claims/${claimPublicId}/chat`);
-  return (response.data || []).map((m: any) => ({
+  const raw = response.data?.data ?? response.data;
+  const list = Array.isArray(raw) ? raw : [];
+  return list.map((m: any) => ({
     messageId: String(m.messageId || m.message_id),
     publicId: m.publicId || m.public_id,
     claimId: String(m.claimId || m.claim_id),
@@ -65,7 +71,7 @@ export const fetchChatMessages = async (claimPublicId: string): Promise<ChatMess
 
 export const sendChatMessage = async (claimPublicId: string, message: string): Promise<ChatMessageUI> => {
   const response = await api.post(`/claims/${claimPublicId}/chat`, { message });
-  const m = response.data;
+  const m = response.data?.data ?? response.data;
   return {
     messageId: String(m.messageId || m.message_id),
     publicId: m.publicId || m.public_id,

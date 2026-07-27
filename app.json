@@ -3,21 +3,19 @@
     "name": "lostnfoundmobile",
     "slug": "lostnfoundmobile",
     "version": "1.0.0",
+    "sdkVersion": "54.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "lostnfoundmobile",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
-      "predictiveBackGestureEnabled": false
+        "backgroundColor": "#0f172a",
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
+      }
     },
     "web": {
       "output": "static",
@@ -28,16 +26,14 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "backgroundColor": "#0f172a"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-asset"
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
     }
   }
 }

@@ -1,24 +1,25 @@
-import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
+import { Eye, EyeOff, Lock, Mail, Phone, ShieldCheck, User } from 'lucide-react-native';
+import { useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
   ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { loginApi, signupApi } from '../../services/authApi';
-import { ShieldCheck, Mail, Lock, User, Phone } from 'lucide-react-native';
 
 export default function AuthScreen() {
   const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Form Fields
   const [email, setEmail] = useState('');
@@ -29,15 +30,15 @@ export default function AuthScreen() {
 
   const handleAuth = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Please enter email and password');
+      Alert.alert('Error', 'Please enter email and password1');
       return;
     }
 
     setLoading(true);
     try {
+      Alert.alert('Success', 'Login just started');
       if (isLogin) {
         await loginApi(email, password);
-        Alert.alert('Success', 'Logged in successfully!');
         router.replace('/');
       } else {
         if (!fullName.trim() || !username.trim() || !phone.trim()) {
@@ -58,10 +59,13 @@ export default function AuthScreen() {
         setIsLogin(true);
       }
     } catch (error: any) {
-      Alert.alert(
-        'Authentication Failed',
-        error.response?.data?.error || error.message || 'An error occurred'
-      );
+      console.log(error);
+      const msg =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        'An error occurred';
+      Alert.alert('Authentication Failed', msg);
     } finally {
       setLoading(false);
     }
@@ -144,10 +148,21 @@ export default function AuthScreen() {
               placeholder="Password"
               placeholderTextColor="#94a3b8"
               style={styles.input}
-              secureTextEntry
+              secureTextEntry={!showPassword}
               value={password}
               onChangeText={setPassword}
             />
+            <TouchableOpacity
+              onPress={() => setShowPassword(!showPassword)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              style={styles.eyeIconContainer}
+            >
+              {showPassword ? (
+                <EyeOff size={20} color="#94a3b8" />
+              ) : (
+                <Eye size={20} color="#94a3b8" />
+              )}
+            </TouchableOpacity>
           </View>
 
           <TouchableOpacity
@@ -241,6 +256,10 @@ const styles = StyleSheet.create({
     flex: 1,
     color: '#f8fafc',
     fontSize: 15,
+  },
+  eyeIconContainer: {
+    padding: 6,
+    marginLeft: 6,
   },
   submitButton: {
     backgroundColor: '#2563eb',

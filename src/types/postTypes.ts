@@ -1,6 +1,5 @@
 export interface PostApi {
   postId: number;
-  publicId: string;
   title: string;
   content: string;
   userId: number;

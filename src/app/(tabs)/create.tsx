@@ -9,13 +9,14 @@ import {
   Alert,
   ActivityIndicator,
   StyleSheet,
-  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { createPostApi } from '../services/postsApi';
-import { getStoredUser } from '../services/authApi';
+import { createPostApi } from '../../services/postsApi';
+import { getStoredUser } from '../../services/authApi';
 import { ArrowLeft, Camera, Image as ImageIcon, MapPin, X } from 'lucide-react-native';
 
 export default function CreatePostScreen() {
@@ -160,7 +161,7 @@ export default function CreatePostScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -293,7 +294,7 @@ export default function CreatePostScreen() {
           </TouchableOpacity>
         </ScrollView>
       </View>
-    </SafeAreaView>
+    </>
   );
 }
 

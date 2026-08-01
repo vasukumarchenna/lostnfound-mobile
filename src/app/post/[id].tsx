@@ -9,11 +9,11 @@ import {
   ActivityIndicator,
   Alert,
   StyleSheet,
-  SafeAreaView,
   Dimensions,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import MapView, { Marker } from 'react-native-maps';
+import MapComponent from '../../components/MapComponent';
+
 import { fetchPostById, fetchPostComments, createPostComment } from '../../services/postsApi';
 import { createClaim } from '../../services/claimsApi';
 import { getStoredUser } from '../../services/authApi';
@@ -108,7 +108,7 @@ export default function PostDetailScreen() {
   const isOwner = post.userId === currentUserId;
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -162,7 +162,7 @@ export default function PostDetailScreen() {
                   </Text>
                 </View>
 
-                <MapView
+                <MapComponent
                   style={styles.map}
                   initialRegion={{
                     latitude: post.latitude,
@@ -172,13 +172,15 @@ export default function PostDetailScreen() {
                   }}
                   scrollEnabled={false}
                   zoomEnabled={false}
-                >
-                  <Marker
-                    coordinate={{ latitude: post.latitude, longitude: post.longitude }}
-                    title={post.buildingName || 'Item Pinpoint'}
-                    pinColor={isFound ? 'green' : 'red'}
-                  />
-                </MapView>
+                  markers={[
+                    {
+                      latitude: post.latitude,
+                      longitude: post.longitude,
+                      title: post.buildingName || 'Item Pinpoint',
+                      pinColor: isFound ? 'green' : 'red',
+                    },
+                  ]}
+                />
               </View>
             )}
 
@@ -268,7 +270,7 @@ export default function PostDetailScreen() {
           </View>
         </ScrollView>
       </View>
-    </SafeAreaView>
+    </>
   );
 }
 

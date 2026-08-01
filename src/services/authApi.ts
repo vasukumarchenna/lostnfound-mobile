@@ -5,6 +5,9 @@ export interface UserAuthData {
   fullName: string;
   email: string;
   token: string;
+  mobile?: string;
+  bio?: string;
+  location?: string;
 }
 
 export const loginApi = async (email: string, password_hash: string): Promise<UserAuthData> => {
@@ -33,6 +36,9 @@ export const loginApi = async (email: string, password_hash: string): Promise<Us
     fullName: userObj?.name || userObj?.fullName || userObj?.full_name || 'User',
     email: userObj?.email || email,
     token,
+    mobile: userObj?.mobile || userObj?.phone_number || '',
+    bio: userObj?.bio || '',
+    location: userObj?.location || '',
   };
 
   await storage.setItem(TOKEN_KEY, token);
@@ -60,10 +66,37 @@ export const signupApi = async (formData: {
   });
 };
 
+export const updateProfileApi = async (data: { full_name?: string; mobile?: string; bio?: string; location?: string }): Promise<void> => {
+  await api.patch('/user/me', data);
+  // Optional: We can update the stored user object here if needed,
+  // but let's do a simple merge for the full name.
+  const stored = await getStoredUser();
+  if (stored) {
+    if (data.full_name) {
+      stored.fullName = data.full_name;
+    }
+    const updated = { ...stored, ...data };
+    await storage.setItem(USER_KEY, JSON.stringify(updated));
+  }
+};
+
+export const getProfileApi = async (): Promise<any> => {
+  const response = await api.get('/user/me');
+  return response.data?.data || response.data;
+};
+
 export const logoutApi = async (): Promise<void> => {
   await storage.deleteItem(TOKEN_KEY);
   await storage.deleteItem(USER_KEY);
 };
+
+export const changePasswordApi = async (current_password: string, new_password: string): Promise<void> => {
+  await api.post('/user/change-password', {
+    current_password,
+    new_password,
+  });
+};
+
 
 export const getStoredUser = async (): Promise<UserAuthData | null> => {
   try {

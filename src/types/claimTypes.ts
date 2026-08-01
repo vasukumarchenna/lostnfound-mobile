@@ -1,6 +1,5 @@
 export interface ClaimUI {
   claimId: string;
-  publicId: string;
   postId: string;
   postTitle?: string;
   itemType?: string;
@@ -17,10 +16,10 @@ export interface ClaimUI {
 
 export interface ChatMessageUI {
   messageId: string;
-  publicId: string;
   claimId: string;
   senderId: string;
   senderName?: string;
   message: string;
   createdAt: string;
+  isMe?: boolean;
 }

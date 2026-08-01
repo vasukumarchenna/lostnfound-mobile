@@ -1,29 +1,29 @@
 import { api, API_BASE_URL } from './api';
 import { PostApi, PostUI, CommentUI } from '../types/postTypes';
 
-export const transformPostApiToUI = (apiPost: PostApi): PostUI => {
-  const images = (apiPost.images || []).map((img) =>
+export const transformPostApiToUI = (apiPost: any): PostUI => {
+  const images = (apiPost.images || []).map((img: string) =>
     img.startsWith('http') ? img : `${API_BASE_URL}${img.startsWith('/') ? '' : '/'}${img}`
   );
 
   return {
-    id: apiPost.publicId || String(apiPost.postId),
-    postId: String(apiPost.postId),
+    id: String(apiPost.postId || apiPost.post_id),
+    postId: String(apiPost.postId || apiPost.post_id),
     title: apiPost.title,
     content: apiPost.content,
-    userId: String(apiPost.userId),
-    itemType: apiPost.itemType,
+    userId: String(apiPost.userId || apiPost.user_id),
+    itemType: apiPost.itemType || apiPost.item_type,
     status: apiPost.status,
     location: apiPost.location || '',
     tags: apiPost.tags || '',
     latitude: apiPost.latitude,
     longitude: apiPost.longitude,
-    buildingName: apiPost.buildingName || '',
-    createdAt: apiPost.createdAt,
+    buildingName: apiPost.buildingName || apiPost.building_name || '',
+    createdAt: apiPost.createdAt || apiPost.created_at,
     images,
-    userFullName: apiPost.userFullName || 'Anonymous User',
-    userEmail: apiPost.userEmail || '',
-    userPhone: apiPost.userPhone || '',
+    userFullName: apiPost.userFullName || apiPost.user_full_name || 'Anonymous User',
+    userEmail: apiPost.userEmail || apiPost.user_email || '',
+    userPhone: apiPost.userPhone || apiPost.user_phone || '',
   };
 };
 
@@ -59,14 +59,14 @@ export const fetchPostComments = async (postId: string): Promise<CommentUI[]> =>
   const raw = response.data?.data ?? response.data;
   const list = Array.isArray(raw) ? raw : [];
   return list.map((c: any) => ({
-    commentId: String(c.commentId || c.comment_id),
-    postId: String(c.postId || c.post_id),
+    commentId: String(c.id || c.commentId || c.comment_id),
+    postId: String(c.postId || c.post_id || postId),
     userId: String(c.userId || c.user_id),
-    content: c.content,
-    createdAt: c.createdAt || c.created_at,
-    userFullName: c.userFullName || c.user_full_name || 'Anonymous',
+    content: c.text || c.content,
+    createdAt: c.time_ago || c.timeAgo || c.createdAt || c.created_at || new Date().toISOString(),
+    userFullName: c.username || c.userFullName || c.user_full_name || 'Anonymous',
     userEmail: c.userEmail || c.user_email || '',
-    profilePictureUrl: c.profilePictureUrl || c.profile_picture_url || '',
+    profilePictureUrl: c.avatar || c.profilePictureUrl || c.profile_picture_url || '',
   }));
 };
 
@@ -74,11 +74,11 @@ export const createPostComment = async (postId: string, content: string): Promis
   const response = await api.post(`/posts/${postId}/comments`, { content });
   const c = response.data?.data ?? response.data;
   return {
-    commentId: String(c.commentId || c.comment_id),
-    postId: String(c.postId || c.post_id),
-    userId: String(c.userId || c.user_id),
-    content: c.content,
-    createdAt: c.createdAt || c.created_at,
-    userFullName: c.userFullName || c.user_full_name || 'You',
+    commentId: String(c.id || c.commentId || c.comment_id || Math.random().toString()),
+    postId: String(c.postId || c.post_id || postId),
+    userId: String(c.userId || c.user_id || ''),
+    content: c.text || c.content || content,
+    createdAt: c.time_ago || c.timeAgo || c.createdAt || c.created_at || new Date().toISOString(),
+    userFullName: c.username || c.userFullName || c.user_full_name || 'You',
   };
 };

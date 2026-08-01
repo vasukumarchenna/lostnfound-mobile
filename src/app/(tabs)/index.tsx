@@ -9,13 +9,12 @@ import {
   RefreshControl,
   ActivityIndicator,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { fetchPosts } from '../services/postsApi';
-import { getStoredUser, logoutApi, UserAuthData } from '../services/authApi';
-import { PostUI } from '../types/postTypes';
+import { fetchPosts } from '../../services/postsApi';
+import { getStoredUser, logoutApi, UserAuthData } from '../../services/authApi';
+import { PostUI } from '../../types/postTypes';
 import { Search, MapPin, Plus, LogOut, ShieldCheck, Tag, Filter } from 'lucide-react-native';
 
 export default function FeedScreen() {
@@ -128,7 +127,7 @@ export default function FeedScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
       <StatusBar barStyle="light-content" backgroundColor="#0f172a" />
       <View style={styles.container}>
         {/* Top Header */}
@@ -221,17 +220,8 @@ export default function FeedScreen() {
             }
           />
         )}
-
-        {/* Floating Action Button (Create Post) */}
-        <TouchableOpacity
-          style={styles.fab}
-          activeOpacity={0.85}
-          onPress={() => router.push('/create')}
-        >
-          <Plus size={28} color="#ffffff" />
-        </TouchableOpacity>
       </View>
-    </SafeAreaView>
+    </>
   );
 }
 
@@ -472,21 +462,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#94a3b8',
     marginTop: 4,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#2563eb',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#2563eb',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
   },
 });

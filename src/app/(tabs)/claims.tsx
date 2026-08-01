@@ -10,8 +10,10 @@ import {
   Modal,
   ScrollView,
   StyleSheet,
-  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
   fetchReceivedClaims,
@@ -20,10 +22,10 @@ import {
   fetchChatMessages,
   sendChatMessage,
   verifyHandoverOtp,
-} from '../services/claimsApi';
-import { getStoredUser } from '../services/authApi';
-import { ClaimUI, ChatMessageUI } from '../types/claimTypes';
-import { ArrowLeft, MessageSquare, ShieldCheck, KeyRound, Check, X, Send } from 'lucide-react-native';
+} from '../../services/claimsApi';
+import { getStoredUser } from '../../services/authApi';
+import { ClaimUI, ChatMessageUI } from '../../types/claimTypes';
+import { ArrowLeft, MessageSquare, ShieldCheck, KeyRound, Check, X, Send, RefreshCw } from 'lucide-react-native';
 
 export default function ClaimsScreen() {
   const router = useRouter();
@@ -42,6 +44,28 @@ export default function ClaimsScreen() {
   const [otpModalClaim, setOtpModalClaim] = useState<ClaimUI | null>(null);
   const [otpCode, setOtpCode] = useState('');
   const [verifyingOtp, setVerifyingOtp] = useState(false);
+
+  const formatRelativeDate = (dateString: string) => {
+    if (!dateString) return '';
+    const d = new Date(dateString);
+    const now = new Date();
+    
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const targetDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+
+    if (targetDate.getTime() === today.getTime()) {
+      return 'Today';
+    } else if (targetDate.getTime() === yesterday.getTime()) {
+      return 'Yesterday';
+    } else {
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
+  };
 
   const loadClaims = useCallback(async () => {
     setLoading(true);
@@ -67,7 +91,7 @@ export default function ClaimsScreen() {
   const handleUpdateStatus = async (claim: ClaimUI, newStatus: string) => {
     setActionLoading(claim.claimId);
     try {
-      await updateClaimStatus(claim.publicId, newStatus);
+      await updateClaimStatus(claim.claimId, newStatus);
       Alert.alert('Status Updated', `Claim has been ${newStatus.toLowerCase()}`);
       loadClaims();
     } catch (error: any) {
@@ -80,18 +104,35 @@ export default function ClaimsScreen() {
   const openChatModal = async (claim: ClaimUI) => {
     setActiveChatClaim(claim);
     try {
-      const messages = await fetchChatMessages(claim.publicId);
+      const messages = await fetchChatMessages(claim.claimId);
       setChatMessages(messages);
     } catch (e) {
       Alert.alert('Chat Error', 'Failed to load chat messages');
     }
   };
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (activeChatClaim) {
+      interval = setInterval(async () => {
+        try {
+          const messages = await fetchChatMessages(activeChatClaim.claimId);
+          setChatMessages(messages);
+        } catch (e) {
+          // ignore polling errors silently
+        }
+      }, 3000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [activeChatClaim]);
+
   const handleSendChat = async () => {
     if (!newMessage.trim() || !activeChatClaim) return;
     setSendingChat(true);
     try {
-      const sent = await sendChatMessage(activeChatClaim.publicId, newMessage.trim());
+      const sent = await sendChatMessage(activeChatClaim.claimId, newMessage.trim());
       setChatMessages((prev) => [...prev, sent]);
       setNewMessage('');
     } catch (e) {
@@ -109,7 +150,7 @@ export default function ClaimsScreen() {
 
     setVerifyingOtp(true);
     try {
-      await verifyHandoverOtp(otpModalClaim.publicId, otpCode.trim());
+      await verifyHandoverOtp(otpModalClaim.claimId, otpCode.trim());
       Alert.alert('Item Resolved! 🎉', 'Handover OTP verified successfully. The claim is now marked RESOLVED.');
       setOtpModalClaim(null);
       setOtpCode('');
@@ -146,10 +187,16 @@ export default function ClaimsScreen() {
           </View>
         </View>
 
-        {/* Claimant Info */}
-        <Text style={styles.claimantText}>
-          Claimant: <Text style={styles.boldText}>{item.claimantName}</Text>
-        </Text>
+        {/* Claimant Info or Date */}
+        {activeTab === 'RECEIVED' ? (
+          <Text style={styles.claimantText}>
+            Claimant: <Text style={styles.boldText}>{item.claimantName}</Text>
+          </Text>
+        ) : (
+          <Text style={styles.claimantText}>
+            Claimed on: <Text style={styles.boldText}>{formatRelativeDate(item.createdAt)}</Text>
+          </Text>
+        )}
 
         {/* Claim Message */}
         <View style={styles.messageBox}>
@@ -211,7 +258,7 @@ export default function ClaimsScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -272,19 +319,34 @@ export default function ClaimsScreen() {
           <SafeAreaView style={styles.modalSafeArea}>
             <View style={styles.modalContainer}>
               <View style={styles.modalHeader}>
+                <TouchableOpacity onPress={() => setActiveChatClaim(null)} style={{ marginRight: 12 }}>
+                  <ArrowLeft size={24} color="#f8fafc" />
+                </TouchableOpacity>
                 <Text style={styles.modalTitle} numberOfLines={1}>
                   Chat - {activeChatClaim?.postTitle}
                 </Text>
-                <TouchableOpacity onPress={() => setActiveChatClaim(null)}>
-                  <X size={24} color="#f8fafc" />
-                </TouchableOpacity>
               </View>
 
               <ScrollView style={styles.chatScroll} contentContainerStyle={styles.chatContent}>
-                {chatMessages.map((m) => (
-                  <View key={m.messageId} style={styles.chatBubble}>
-                    <Text style={styles.chatSender}>{m.senderName}</Text>
-                    <Text style={styles.chatMessage}>{m.message}</Text>
+                {chatMessages.map((msg) => (
+                  <View
+                    key={msg.messageId}
+                    style={[
+                      styles.chatMessage,
+                      msg.isMe ? styles.chatMessageRight : styles.chatMessageLeft,
+                    ]}
+                  >
+                    <View
+                      style={[
+                        styles.chatBubble,
+                        msg.isMe ? styles.chatBubbleRight : styles.chatBubbleLeft,
+                      ]}
+                    >
+                      <Text style={[styles.chatSender, msg.isMe && styles.chatSenderRight]}>
+                        {msg.senderName}
+                      </Text>
+                      <Text style={styles.chatMessageText}>{msg.message}</Text>
+                    </View>
                   </View>
                 ))}
               </ScrollView>
@@ -356,7 +418,7 @@ export default function ClaimsScreen() {
           </View>
         </Modal>
       </View>
-    </SafeAreaView>
+    </>
   );
 }
 
@@ -619,6 +681,42 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   chatMessage: {
+    flexDirection: 'row',
+    marginBottom: 4,
+  },
+  chatMessageLeft: {
+    justifyContent: 'flex-start',
+  },
+  chatMessageRight: {
+    justifyContent: 'flex-end',
+  },
+  chatBubble: {
+    backgroundColor: '#1e293b',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#334155',
+    maxWidth: '80%',
+  },
+  chatBubbleLeft: {
+    borderBottomLeftRadius: 4,
+  },
+  chatBubbleRight: {
+    backgroundColor: '#0284c7',
+    borderColor: '#0369a1',
+    borderBottomRightRadius: 4,
+  },
+  chatSender: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#38bdf8',
+    marginBottom: 2,
+  },
+  chatSenderRight: {
+    color: '#bae6fd',
+    textAlign: 'right',
+  },
+  chatMessageText: {
     fontSize: 14,
     color: '#f8fafc',
   },

@@ -22,10 +22,14 @@ import {
   fetchChatMessages,
   sendChatMessage,
   verifyHandoverOtp,
+  markMessagesAsSeen,
+  markMessagesAsDelivered,
 } from '../../services/claimsApi';
 import { getStoredUser } from '../../services/authApi';
+import { api } from '../../services/api';
 import { ClaimUI, ChatMessageUI } from '../../types/claimTypes';
-import { ArrowLeft, MessageSquare, ShieldCheck, KeyRound, Check, X, Send, RefreshCw } from 'lucide-react-native';
+import { ArrowLeft, MessageSquare, ShieldCheck, KeyRound, Check, CheckCheck, X, Send, RefreshCw } from 'lucide-react-native';
+import EventSource from 'react-native-sse';
 
 export default function ClaimsScreen() {
   const router = useRouter();
@@ -39,11 +43,20 @@ export default function ClaimsScreen() {
   const [chatMessages, setChatMessages] = useState<ChatMessageUI[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [sendingChat, setSendingChat] = useState(false);
+  const scrollViewRef = React.useRef<ScrollView>(null);
 
   // OTP Verification Modal State
   const [otpModalClaim, setOtpModalClaim] = useState<ClaimUI | null>(null);
   const [otpCode, setOtpCode] = useState('');
   const [verifyingOtp, setVerifyingOtp] = useState(false);
+
+  const formatTime = (dateString?: string | null) => {
+    if (!dateString) return '';
+    // Strip 'Z' suffix so it parses as local time instead of UTC, preventing the +5:30 double-add
+    const normalizedDate = dateString.endsWith("Z") ? dateString.slice(0, -1) : dateString;
+    const d = new Date(normalizedDate);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
 
   const formatRelativeDate = (dateString: string) => {
     if (!dateString) return '';
@@ -106,25 +119,71 @@ export default function ClaimsScreen() {
     try {
       const messages = await fetchChatMessages(claim.claimId);
       setChatMessages(messages);
+      await markMessagesAsSeen(claim.claimId);
     } catch (e) {
       Alert.alert('Chat Error', 'Failed to load chat messages');
     }
   };
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let es: EventSource | null = null;
+    
     if (activeChatClaim) {
-      interval = setInterval(async () => {
+      const setupSSE = async () => {
         try {
-          const messages = await fetchChatMessages(activeChatClaim.claimId);
-          setChatMessages(messages);
-        } catch (e) {
-          // ignore polling errors silently
-        }
-      }, 3000);
+          const user = await getStoredUser();
+          const token = user?.token;
+          const url = `${api.defaults.baseURL}/claims/${activeChatClaim.claimId}/chat/stream`;
+          
+          es = new EventSource(url, {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+
+          es.addEventListener('error', (err) => {
+            console.error('SSE Error:', err);
+          });
+
+          es.addEventListener('message', (event) => {
+            if (event.data) {
+              try {
+                const parsed = JSON.parse(event.data);
+                if (parsed.type === 'NEW_MESSAGE') {
+                  const uiMsg = {
+                    messageId: parsed.message.message_id,
+                    claimId: parsed.message.claim_id,
+                    senderId: parsed.message.sender_id,
+                    senderName: parsed.message.sender_name,
+                    senderUsername: parsed.message.sender_username,
+                    message: parsed.message.message,
+                    createdAt: parsed.message.created_at,
+                    deliveredAt: parsed.message.delivered_at,
+                    seenAt: parsed.message.seen_at,
+                    isMe: false, // Incoming SSE messages are ALWAYS from the other user
+                  };
+                  setChatMessages((prev) => {
+                    if (prev.some((m) => m.messageId === uiMsg.messageId)) return prev;
+                    return [...prev, uiMsg];
+                  });
+                  markMessagesAsSeen(activeChatClaim.claimId).catch(() => {});
+                } else if (parsed.type === 'MESSAGE_SEEN' || parsed.type === 'MESSAGE_DELIVERED') {
+                  fetchChatMessages(activeChatClaim.claimId).then(setChatMessages).catch(() => {});
+                }
+              } catch (e) {}
+            }
+          });
+        } catch(e) {}
+      };
+      
+      setupSSE();
     }
+    
     return () => {
-      if (interval) clearInterval(interval);
+      if (es) {
+        es.removeAllEventListeners();
+        es.close();
+      }
     };
   }, [activeChatClaim]);
 
@@ -327,7 +386,12 @@ export default function ClaimsScreen() {
                 </Text>
               </View>
 
-              <ScrollView style={styles.chatScroll} contentContainerStyle={styles.chatContent}>
+              <ScrollView 
+                ref={scrollViewRef}
+                style={styles.chatScroll} 
+                contentContainerStyle={styles.chatContent}
+                onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+              >
                 {chatMessages.map((msg) => (
                   <View
                     key={msg.messageId}
@@ -346,6 +410,21 @@ export default function ClaimsScreen() {
                         {msg.senderName}
                       </Text>
                       <Text style={styles.chatMessageText}>{msg.message}</Text>
+                      
+                      {msg.isMe && (
+                        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 4 }}>
+                          <Text style={{ fontSize: 10, color: '#bae6fd', marginRight: 4 }}>
+                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </Text>
+                          {msg.seenAt ? (
+                            <CheckCheck size={14} color="#38bdf8" />
+                          ) : msg.deliveredAt ? (
+                            <CheckCheck size={14} color="#bae6fd" />
+                          ) : (
+                            <Check size={14} color="#bae6fd" />
+                          )}
+                        </View>
+                      )}
                     </View>
                   </View>
                 ))}

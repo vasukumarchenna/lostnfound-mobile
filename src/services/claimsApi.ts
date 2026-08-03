@@ -70,6 +70,8 @@ export const fetchChatMessages = async (claimId: string): Promise<ChatMessageUI[
     senderName: m.senderName || m.sender_name || 'User',
     message: m.message,
     createdAt: m.createdAt || m.created_at,
+    deliveredAt: m.deliveredAt || m.delivered_at,
+    seenAt: m.seenAt || m.seen_at,
     isMe: m.isMe ?? m.is_me ?? false,
   }));
 };
@@ -84,8 +86,18 @@ export const sendChatMessage = async (claimId: string, message: string): Promise
     senderName: m.senderName || m.sender_name || 'You',
     message: m.message,
     createdAt: m.createdAt || m.created_at,
+    deliveredAt: m.deliveredAt || m.delivered_at,
+    seenAt: m.seenAt || m.seen_at,
     isMe: true,
   };
+};
+
+export const markMessagesAsSeen = async (claimId: string): Promise<void> => {
+  await api.post(`/claims/${claimId}/chat/seen`);
+};
+
+export const markMessagesAsDelivered = async (claimId: string): Promise<void> => {
+  await api.post(`/claims/${claimId}/chat/delivered`);
 };
 
 export const verifyHandoverOtp = async (claimId: string, otp: string): Promise<{ success: boolean; message: string }> => {

@@ -21,5 +21,7 @@ export interface ChatMessageUI {
   senderName?: string;
   message: string;
   createdAt: string;
+  deliveredAt?: string;
+  seenAt?: string;
   isMe?: boolean;
 }

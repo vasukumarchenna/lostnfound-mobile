@@ -24,6 +24,11 @@ export const transformPostApiToUI = (apiPost: any): PostUI => {
     userFullName: apiPost.userFullName || apiPost.user_full_name || 'Anonymous User',
     userEmail: apiPost.userEmail || apiPost.user_email || '',
     userPhone: apiPost.userPhone || apiPost.user_phone || '',
+    classificationName: apiPost.classificationName || apiPost.classification_name || '',
+    classificationSlug: apiPost.classificationSlug || apiPost.classification_slug || '',
+    attributes: apiPost.attributes || {},
+    estimatedAge: apiPost.estimatedAge || apiPost.estimated_age,
+    estimatedBirthYear: apiPost.estimatedBirthYear || apiPost.estimated_birth_year,
   };
 };
 

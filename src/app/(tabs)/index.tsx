@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { fetchPosts } from '../../services/postsApi';
 import { getStoredUser, logoutApi, UserAuthData } from '../../services/authApi';
 import { PostUI } from '../../types/postTypes';
+import { formatRelativeTime } from '../../utils/time';
 import { Search, MapPin, Plus, LogOut, ShieldCheck, Tag, Filter } from 'lucide-react-native';
 
 export default function FeedScreen() {
@@ -91,9 +92,11 @@ export default function FeedScreen() {
               <Text style={styles.typeBadgeText}>{item.itemType}</Text>
             </View>
 
-            <View style={styles.statusBadge}>
-              <Text style={styles.statusBadgeText}>{item.status}</Text>
-            </View>
+            {item.classificationName && (
+              <View style={styles.categoryBadge}>
+                <Text style={styles.categoryBadgeText}>Category: {item.classificationName}</Text>
+              </View>
+            )}
           </View>
 
           {/* Title & Description */}
@@ -118,7 +121,7 @@ export default function FeedScreen() {
           <View style={styles.cardFooter}>
             <Text style={styles.authorText}>By {item.userFullName}</Text>
             <Text style={styles.dateText}>
-              {new Date(item.createdAt).toLocaleDateString()}
+              {formatRelativeTime(item.createdAt)}
             </Text>
           </View>
         </View>
@@ -395,6 +398,17 @@ const styles = StyleSheet.create({
   },
   statusBadgeText: {
     color: '#94a3b8',
+    fontSize: 11,
+    fontWeight: '500',
+  },
+  categoryBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+  },
+  categoryBadgeText: {
+    color: '#93c5fd',
     fontSize: 11,
     fontWeight: '500',
   },

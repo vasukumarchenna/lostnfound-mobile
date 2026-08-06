@@ -17,7 +17,9 @@ import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
 import { createPostApi } from '../../services/postsApi';
 import { getStoredUser } from '../../services/authApi';
-import { ArrowLeft, Camera, Image as ImageIcon, MapPin, X } from 'lucide-react-native';
+import { fetchClassificationTree, ClassificationTreeItem, ClassificationAttribute } from '../../services/classificationsApi';
+import MapComponent from '../../components/MapComponent';
+import { ArrowLeft, Camera, Image as ImageIcon, MapPin, X, ChevronRight } from 'lucide-react-native';
 
 export default function CreatePostScreen() {
   const router = useRouter();
@@ -32,6 +34,38 @@ export default function CreatePostScreen() {
   const [buildingName, setBuildingName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [locating, setLocating] = useState(false);
+
+  // Classification State
+  const [classificationTree, setClassificationTree] = useState<ClassificationTreeItem[]>([]);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<number | null>(null);
+  const [attributes, setAttributes] = useState<Record<string, any>>({});
+  const [loadingCategories, setLoadingCategories] = useState(true);
+
+  React.useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const tree = await fetchClassificationTree();
+        setClassificationTree(tree);
+      } catch (e) {
+        console.warn('Failed to load categories', e);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    loadCategories();
+  }, []);
+
+  const selectedCategory = classificationTree.find(c => c.classification_id === selectedCategoryId);
+  const subcategories = selectedCategory?.children || [];
+  const selectedSubcategory = subcategories.find(c => c.classification_id === selectedSubcategoryId);
+  
+  const activeCategory = selectedSubcategory || selectedCategory;
+  const activeAttributes = activeCategory?.attributes || [];
+
+  const handleAttributeChange = (attrName: string, value: any) => {
+    setAttributes((prev) => ({ ...prev, [attrName]: value }));
+  };
 
   const pickImage = async () => {
     if (images.length >= 5) {
@@ -140,6 +174,14 @@ export default function CreatePostScreen() {
       if (longitude !== undefined) formData.append('longitude', String(longitude));
       if (buildingName) formData.append('building_name', buildingName);
 
+      if (activeCategory) {
+        formData.append('classification_id', String(activeCategory.classification_id));
+      }
+      
+      if (Object.keys(attributes).length > 0) {
+        formData.append('attributes', JSON.stringify(attributes));
+      }
+
       // Attach image files
       images.forEach((uri, index) => {
         const fileType = uri.endsWith('.png') ? 'image/png' : 'image/jpeg';
@@ -217,6 +259,105 @@ export default function CreatePostScreen() {
             onChangeText={setContent}
           />
 
+          {/* Classification / Category Selection */}
+          <Text style={styles.label}>Category</Text>
+          {loadingCategories ? (
+            <ActivityIndicator color="#3b82f6" style={{ alignSelf: 'flex-start', marginTop: 10 }} />
+          ) : (
+            <View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+                {classificationTree.map((cat) => (
+                  <TouchableOpacity
+                    key={cat.classification_id}
+                    style={[styles.catChip, selectedCategoryId === cat.classification_id && styles.catChipActive]}
+                    onPress={() => {
+                      setSelectedCategoryId(cat.classification_id);
+                      setSelectedSubcategoryId(null);
+                      setAttributes({});
+                    }}
+                  >
+                    <Text style={[styles.catChipText, selectedCategoryId === cat.classification_id && styles.catChipTextActive]}>
+                      {cat.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              
+              {subcategories.length > 0 && (
+                <View style={styles.subcategoryBox}>
+                  <Text style={styles.subcatLabel}>Subcategory:</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+                    {subcategories.map((sub) => (
+                      <TouchableOpacity
+                        key={sub.classification_id}
+                        style={[styles.subcatChip, selectedSubcategoryId === sub.classification_id && styles.subcatChipActive]}
+                        onPress={() => {
+                          setSelectedSubcategoryId(sub.classification_id);
+                          setAttributes({});
+                        }}
+                      >
+                        <Text style={[styles.subcatChipText, selectedSubcategoryId === sub.classification_id && styles.subcatChipTextActive]}>
+                          {sub.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Dynamic Attributes */}
+          {activeAttributes.length > 0 && (
+            <View style={styles.attributesContainer}>
+              <Text style={styles.attributesHeader}>Item Details</Text>
+              {activeAttributes.map((attr) => (
+                <View key={attr.attribute_id} style={styles.attrInputBox}>
+                  <Text style={styles.attrLabel}>{attr.name} {attr.is_required ? '*' : ''}</Text>
+                  {attr.data_type === 'BOOLEAN' ? (
+                    <View style={styles.typeRow}>
+                      <TouchableOpacity
+                        style={[styles.typeButton, attributes[attr.name] === true && styles.attrBoolActive]}
+                        onPress={() => handleAttributeChange(attr.name, true)}
+                      >
+                        <Text style={[styles.typeText, attributes[attr.name] === true && styles.catChipTextActive]}>Yes</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.typeButton, attributes[attr.name] === false && styles.attrBoolActive]}
+                        onPress={() => handleAttributeChange(attr.name, false)}
+                      >
+                        <Text style={[styles.typeText, attributes[attr.name] === false && styles.catChipTextActive]}>No</Text>
+                      </TouchableOpacity>
+                    </View>
+                  ) : attr.options && attr.options.length > 0 ? (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+                      {attr.options.map((opt) => (
+                        <TouchableOpacity
+                          key={opt}
+                          style={[styles.subcatChip, attributes[attr.name] === opt && styles.subcatChipActive]}
+                          onPress={() => handleAttributeChange(attr.name, opt)}
+                        >
+                          <Text style={[styles.subcatChipText, attributes[attr.name] === opt && styles.subcatChipTextActive]}>
+                            {opt}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </ScrollView>
+                  ) : (
+                    <TextInput
+                      placeholder={`Enter ${attr.name.toLowerCase()}`}
+                      placeholderTextColor="#64748b"
+                      style={styles.input}
+                      value={attributes[attr.name] || ''}
+                      onChangeText={(val) => handleAttributeChange(attr.name, val)}
+                      keyboardType={attr.data_type === 'NUMBER' ? 'numeric' : 'default'}
+                    />
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
+
           {/* Location & GPS */}
           <View style={styles.labelRow}>
             <Text style={styles.label}>Location / Building</Text>
@@ -227,14 +368,44 @@ export default function CreatePostScreen() {
             >
               <MapPin size={14} color="#f43f5e" />
               <Text style={styles.gpsText}>
-                {locating ? 'Acquiring GPS...' : latitude ? '📍 GPS Attached' : 'Get Current GPS'}
+                {locating ? 'Acquiring GPS...' : 'My Location'}
               </Text>
             </TouchableOpacity>
           </View>
+          
+          <View style={styles.mapWrapper}>
+            <MapComponent
+              style={styles.mapView}
+              initialRegion={{
+                latitude: latitude || 37.78825,
+                longitude: longitude || -122.4324,
+                latitudeDelta: 0.0922,
+                longitudeDelta: 0.0421,
+              }}
+              region={latitude && longitude ? {
+                latitude,
+                longitude,
+                latitudeDelta: 0.005,
+                longitudeDelta: 0.005,
+              } : undefined}
+              onPress={(e) => {
+                setLatitude(e.nativeEvent.coordinate.latitude);
+                setLongitude(e.nativeEvent.coordinate.longitude);
+              }}
+              markers={latitude && longitude ? [{
+                latitude,
+                longitude,
+                title: 'Selected Location',
+                pinColor: itemType === 'FOUND' ? 'green' : 'red',
+              }] : []}
+            />
+            <Text style={styles.mapHelpText}>Tap on the map to pinpoint the exact location.</Text>
+          </View>
+
           <TextInput
             placeholder="e.g. Library 2nd Floor, Engineering Block A"
             placeholderTextColor="#64748b"
-            style={styles.input}
+            style={[styles.input, { marginTop: 10 }]}
             value={locationText}
             onChangeText={setLocationText}
           />
@@ -472,5 +643,125 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  mapWrapper: {
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#334155',
+    backgroundColor: '#1e293b',
+  },
+  mapView: {
+    width: '100%',
+    height: 200,
+  },
+  mapHelpText: {
+    fontSize: 12,
+    color: '#94a3b8',
+    padding: 10,
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  categoryScroll: {
+    paddingVertical: 8,
+    gap: 8,
+  },
+  catChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#1e293b',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  catChipActive: {
+    backgroundColor: '#2563eb',
+    borderColor: '#3b82f6',
+  },
+  catChipText: {
+    color: '#94a3b8',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  catChipTextActive: {
+    color: '#ffffff',
+  },
+  subcategoryBox: {
+    backgroundColor: '#1e293b',
+    borderRadius: 14,
+    padding: 12,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  subcatLabel: {
+    color: '#cbd5e1',
+    fontSize: 13,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  subcatChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    backgroundColor: '#0f172a',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  subcatChipActive: {
+    backgroundColor: '#3b82f6',
+    borderColor: '#60a5fa',
+  },
+  subcatChipText: {
+    color: '#94a3b8',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  subcatChipTextActive: {
+    color: '#ffffff',
+  },
+  attributesContainer: {
+    backgroundColor: 'rgba(59, 130, 246, 0.05)',
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.2)',
+  },
+  attributesHeader: {
+    color: '#38bdf8',
+    fontSize: 15,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  attrInputBox: {
+    marginBottom: 12,
+  },
+  attrLabel: {
+    fontSize: 13,
+    color: '#cbd5e1',
+    marginBottom: 6,
+    fontWeight: '500',
+  },
+  typeRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  typeButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: '#0f172a',
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  typeText: {
+    color: '#94a3b8',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  attrBoolActive: {
+    backgroundColor: '#3b82f6',
+    borderColor: '#60a5fa',
   },
 });

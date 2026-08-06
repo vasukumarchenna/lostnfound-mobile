@@ -1,35 +1,32 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'expo-router';
+import { ArrowLeft, Check, CheckCheck, KeyRound, MessageSquare, Send, ShieldCheck, X } from 'lucide-react-native';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  TextInput,
   ActivityIndicator,
   Alert,
+  FlatList,
   Modal,
   ScrollView,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import {
-  fetchReceivedClaims,
-  fetchMyClaims,
-  updateClaimStatus,
-  fetchChatMessages,
-  sendChatMessage,
-  verifyHandoverOtp,
-  markMessagesAsSeen,
-  markMessagesAsDelivered,
-} from '../../services/claimsApi';
-import { getStoredUser } from '../../services/authApi';
-import { api } from '../../services/api';
-import { ClaimUI, ChatMessageUI } from '../../types/claimTypes';
-import { ArrowLeft, MessageSquare, ShieldCheck, KeyRound, Check, CheckCheck, X, Send, RefreshCw } from 'lucide-react-native';
 import EventSource from 'react-native-sse';
+import { api } from '../../services/api';
+import { getStoredUser } from '../../services/authApi';
+import {
+  fetchChatMessages,
+  fetchMyClaims,
+  fetchReceivedClaims,
+  markMessagesAsSeen,
+  sendChatMessage,
+  updateClaimStatus,
+  verifyHandoverOtp
+} from '../../services/claimsApi';
+import { ChatMessageUI, ClaimUI } from '../../types/claimTypes';
 
 export default function ClaimsScreen() {
   const router = useRouter();
@@ -62,7 +59,7 @@ export default function ClaimsScreen() {
     if (!dateString) return '';
     const d = new Date(dateString);
     const now = new Date();
-    
+
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
@@ -127,14 +124,14 @@ export default function ClaimsScreen() {
 
   useEffect(() => {
     let es: EventSource | null = null;
-    
+
     if (activeChatClaim) {
       const setupSSE = async () => {
         try {
           const user = await getStoredUser();
           const token = user?.token;
           const url = `${api.defaults.baseURL}/claims/${activeChatClaim.claimId}/chat/stream`;
-          
+
           es = new EventSource(url, {
             headers: {
               Authorization: `Bearer ${token}`
@@ -166,19 +163,19 @@ export default function ClaimsScreen() {
                     if (prev.some((m) => m.messageId === uiMsg.messageId)) return prev;
                     return [...prev, uiMsg];
                   });
-                  markMessagesAsSeen(activeChatClaim.claimId).catch(() => {});
+                  markMessagesAsSeen(activeChatClaim.claimId).catch(() => { });
                 } else if (parsed.type === 'MESSAGE_SEEN' || parsed.type === 'MESSAGE_DELIVERED') {
-                  fetchChatMessages(activeChatClaim.claimId).then(setChatMessages).catch(() => {});
+                  fetchChatMessages(activeChatClaim.claimId).then(setChatMessages).catch(() => { });
                 }
-              } catch (e) {}
+              } catch (e) { }
             }
           });
-        } catch(e) {}
+        } catch (e) { }
       };
-      
+
       setupSSE();
     }
-    
+
     return () => {
       if (es) {
         es.removeAllEventListeners();
@@ -386,9 +383,9 @@ export default function ClaimsScreen() {
                 </Text>
               </View>
 
-              <ScrollView 
+              <ScrollView
                 ref={scrollViewRef}
-                style={styles.chatScroll} 
+                style={styles.chatScroll}
                 contentContainerStyle={styles.chatContent}
                 onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
               >
@@ -410,7 +407,7 @@ export default function ClaimsScreen() {
                         {msg.senderName}
                       </Text>
                       <Text style={styles.chatMessageText}>{msg.message}</Text>
-                      
+
                       {msg.isMe && (
                         <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 4 }}>
                           <Text style={{ fontSize: 10, color: '#bae6fd', marginRight: 4 }}>
@@ -745,19 +742,6 @@ const styles = StyleSheet.create({
   chatContent: {
     padding: 16,
     gap: 12,
-  },
-  chatBubble: {
-    backgroundColor: '#1e293b',
-    padding: 12,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  chatSender: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#38bdf8',
-    marginBottom: 2,
   },
   chatMessage: {
     flexDirection: 'row',

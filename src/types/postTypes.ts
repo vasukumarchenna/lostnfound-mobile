@@ -37,6 +37,11 @@ export interface PostUI {
   userFullName?: string;
   userEmail?: string;
   userPhone?: string;
+  classificationName?: string;
+  classificationSlug?: string;
+  attributes?: Record<string, any>;
+  estimatedAge?: number;
+  estimatedBirthYear?: number;
 }
 
 export interface CommentUI {

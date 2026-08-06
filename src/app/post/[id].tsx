@@ -18,6 +18,7 @@ import { fetchPostById, fetchPostComments, createPostComment } from '../../servi
 import { createClaim } from '../../services/claimsApi';
 import { getStoredUser } from '../../services/authApi';
 import { PostUI, CommentUI } from '../../types/postTypes';
+import { formatRelativeTime } from '../../utils/time';
 import { ArrowLeft, MapPin, Send, Tag, User, ShieldCheck } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
@@ -137,14 +138,40 @@ export default function PostDetailScreen() {
               <View style={[styles.typeBadge, isFound ? styles.badgeFound : styles.badgeLost]}>
                 <Text style={styles.typeBadgeText}>{post.itemType}</Text>
               </View>
-
-              <View style={styles.statusBadge}>
-                <Text style={styles.statusBadgeText}>{post.status}</Text>
-              </View>
             </View>
+
+            {post.classificationName && (
+              <View style={styles.categoryBadge}>
+                <Text style={styles.categoryBadgeText}>Category: {post.classificationName}</Text>
+              </View>
+            )}
 
             <Text style={styles.title}>{post.title}</Text>
             <Text style={styles.description}>{post.content}</Text>
+
+            {/* Classification Details */}
+            {((post.attributes && Object.keys(post.attributes).length > 0) || post.estimatedBirthYear != null) && (
+              <View style={styles.attributesContainer}>
+                <Text style={styles.attributesHeader}>Category Details</Text>
+                <View style={styles.attributesGrid}>
+                  {post.estimatedBirthYear != null && (
+                    <View style={styles.attributeChip}>
+                      <Text style={styles.attributeKey}>Birth Year:</Text>
+                      <Text style={styles.attributeValue}>~{post.estimatedBirthYear}</Text>
+                    </View>
+                  )}
+                  {post.attributes &&
+                    Object.entries(post.attributes).map(([key, value]) => (
+                      <View key={key} style={styles.attributeChip}>
+                        <Text style={styles.attributeKey}>{key.replace(/_/g, ' ')}:</Text>
+                        <Text style={styles.attributeValue}>
+                          {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : String(value)}
+                        </Text>
+                      </View>
+                    ))}
+                </View>
+              </View>
+            )}
 
             {/* Author Info */}
             <View style={styles.authorCard}>
@@ -262,7 +289,7 @@ export default function PostDetailScreen() {
                   <Text style={styles.commentAuthor}>{item.userFullName}</Text>
                   <Text style={styles.commentContent}>{item.content}</Text>
                   <Text style={styles.commentDate}>
-                    {new Date(item.createdAt).toLocaleDateString()}
+                    {formatRelativeTime(item.createdAt)}
                   </Text>
                 </View>
               ))}
@@ -361,6 +388,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '500',
   },
+  categoryBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(59, 130, 246, 0.15)',
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#3b82f6',
+  },
+  categoryBadgeText: {
+    color: '#93c5fd',
+    fontSize: 12,
+    fontWeight: '600',
+  },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
@@ -372,6 +414,47 @@ const styles = StyleSheet.create({
     color: '#cbd5e1',
     lineHeight: 22,
     marginBottom: 16,
+  },
+  attributesContainer: {
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  attributesHeader: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#f8fafc',
+    marginBottom: 12,
+  },
+  attributesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  attributeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#0f172a',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#334155',
+    gap: 6,
+  },
+  attributeKey: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#94a3b8',
+    textTransform: 'capitalize',
+  },
+  attributeValue: {
+    fontSize: 13,
+    color: '#f8fafc',
+    fontWeight: '500',
   },
   authorCard: {
     flexDirection: 'row',

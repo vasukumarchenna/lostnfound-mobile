@@ -14,6 +14,7 @@ import {
   View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardWrapper } from '../../components/KeyboardWrapper';
 import EventSource from 'react-native-sse';
 import { api } from '../../services/api';
 import { getStoredUser } from '../../services/authApi';
@@ -373,7 +374,7 @@ export default function ClaimsScreen() {
           onRequestClose={() => setActiveChatClaim(null)}
         >
           <SafeAreaView style={styles.modalSafeArea}>
-            <View style={styles.modalContainer}>
+            <KeyboardWrapper type="fixed-bottom" style={styles.modalContainer}>
               <View style={styles.modalHeader}>
                 <TouchableOpacity onPress={() => setActiveChatClaim(null)} style={{ marginRight: 12 }}>
                   <ArrowLeft size={24} color="#f8fafc" />
@@ -443,7 +444,7 @@ export default function ClaimsScreen() {
                   <Send size={18} color="#ffffff" />
                 </TouchableOpacity>
               </View>
-            </View>
+            </KeyboardWrapper>
           </SafeAreaView>
         </Modal>
 
@@ -454,7 +455,7 @@ export default function ClaimsScreen() {
           animationType="fade"
           onRequestClose={() => setOtpModalClaim(null)}
         >
-          <View style={styles.overlayContainer}>
+          <KeyboardWrapper type="modal" style={styles.overlayContainer}>
             <View style={styles.otpModalCard}>
               <KeyRound size={32} color="#f59e0b" style={{ alignSelf: 'center', marginBottom: 10 }} />
               <Text style={styles.otpTitle}>Enter Handover OTP</Text>
@@ -491,7 +492,7 @@ export default function ClaimsScreen() {
                 </TouchableOpacity>
               </View>
             </View>
-          </View>
+          </KeyboardWrapper>
         </Modal>
       </View>
     </>

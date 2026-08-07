@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Save, Lock, Eye, EyeOff } from 'lucide-react-native';
 import { changePasswordApi } from '../services/authApi';
+import { KeyboardWrapper } from '../components/KeyboardWrapper';
 
 export default function ChangePasswordScreen() {
   const router = useRouter();
@@ -82,11 +83,7 @@ export default function ChangePasswordScreen() {
         </TouchableOpacity>
       </View>
 
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
-        <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer} keyboardShouldPersistTaps="handled">
+      <KeyboardWrapper type="scrollable" style={styles.content} contentContainerStyle={styles.contentContainer}>
           <View style={styles.infoBox}>
             <Lock size={24} color="#3b82f6" />
             <Text style={styles.infoText}>
@@ -99,8 +96,7 @@ export default function ChangePasswordScreen() {
             {renderPasswordInput('New Password', newPassword, setNewPassword, showNewPassword, setShowNewPassword)}
             {renderPasswordInput('Confirm New Password', confirmPassword, setConfirmPassword, showConfirmPassword, setShowConfirmPassword)}
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardWrapper>
     </SafeAreaView>
   );
 }

@@ -5,6 +5,7 @@ import { InvitationUI, OrgRole } from '../../../types/organizationTypes';
 import { listSentInvitations, revokeInvitation, createInvitation } from '../../../services/organizationsApi';
 import { Mail, ArrowLeft, Trash2, Plus } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardWrapper } from '../../../components/KeyboardWrapper';
 
 export default function InvitationsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -112,7 +113,7 @@ export default function InvitationsScreen() {
       </View>
 
       <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.modalOverlay}>
+        <KeyboardWrapper type="modal" style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Send Invitation</Text>
             
@@ -147,7 +148,7 @@ export default function InvitationsScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardWrapper>
       </Modal>
     </SafeAreaView>
   );

@@ -7,10 +7,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
   Platform,
-  ScrollView,
 } from 'react-native';
+import { KeyboardWrapper } from '../components/KeyboardWrapper';
 import { useRouter } from 'expo-router';
 import { ArrowLeft, Save, User as UserIcon, Phone, MapPin, FileText } from 'lucide-react-native';
 import { getStoredUser, updateProfileApi, getProfileApi, UserAuthData } from '../services/authApi';
@@ -94,10 +93,7 @@ export default function EditProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView 
-        style={{ flex: 1 }} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      >
+      <KeyboardWrapper type="scrollable" style={{ flex: 1 }} contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -107,8 +103,7 @@ export default function EditProfileScreen() {
           <View style={{ width: 24 }} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.formGroup}>
+        <View style={styles.formGroup}>
             <Text style={styles.label}>Full Name</Text>
             <View style={styles.inputWrapper}>
               <UserIcon size={20} color="#64748b" style={styles.inputIcon} />
@@ -181,8 +176,7 @@ export default function EditProfileScreen() {
               </>
             )}
           </TouchableOpacity>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardWrapper>
     </SafeAreaView>
   );
 }

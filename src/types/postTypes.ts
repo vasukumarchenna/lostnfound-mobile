@@ -42,6 +42,7 @@ export interface PostUI {
   attributes?: Record<string, any>;
   estimatedAge?: number;
   estimatedBirthYear?: number;
+  hasActiveClaim?: boolean;
 }
 
 export interface CommentUI {
@@ -53,4 +54,5 @@ export interface CommentUI {
   userFullName: string;
   userEmail?: string;
   profilePictureUrl?: string;
+  parentCommentId?: string;
 }

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
 import EventSource from 'react-native-sse';
 import { getStoredUser } from '../services/authApi';
-import { API_BASE_URL } from '../services/api';
+import { API_BASE_URL, storage, TOKEN_KEY } from '../services/api';
 import { Bell, X } from 'lucide-react-native';
 
 interface NotificationContextType {
@@ -27,7 +27,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       if (!user) return;
 
       const url = `${API_BASE_URL}/api/v1/notifications/stream?user_id=${user.userId}`;
-      es = new EventSource(url);
+      const token = await storage.getItem(TOKEN_KEY);
+      
+      es = new EventSource(url, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
 
       es.addEventListener('message', (event) => {
         if (event.data) {

@@ -38,7 +38,7 @@ export default function FeedScreen() {
 
       const params: any = {};
       if (filterType !== 'ALL') params.item_type = filterType;
-      if (searchQuery.trim()) params.query = searchQuery.trim();
+      if (searchQuery.trim()) params.search = searchQuery.trim();
 
       const data = await fetchPosts(params);
       setPosts(data);
@@ -95,6 +95,12 @@ export default function FeedScreen() {
             {item.classificationName && (
               <View style={styles.categoryBadge}>
                 <Text style={styles.categoryBadgeText}>Category: {item.classificationName}</Text>
+              </View>
+            )}
+            
+            {item.hasActiveClaim && (
+              <View style={[styles.typeBadge, { backgroundColor: '#eab308' }]}>
+                <Text style={styles.typeBadgeText}>Sent a claim request</Text>
               </View>
             )}
           </View>

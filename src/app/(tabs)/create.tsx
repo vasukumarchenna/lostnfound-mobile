@@ -9,9 +9,9 @@ import {
   Alert,
   ActivityIndicator,
   StyleSheet,
-  KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { KeyboardWrapper } from '../../components/KeyboardWrapper';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
@@ -204,7 +204,7 @@ export default function CreatePostScreen() {
 
   return (
     <>
-      <View style={styles.container}>
+      <KeyboardWrapper type="scrollable" style={styles.container} contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -213,8 +213,6 @@ export default function CreatePostScreen() {
           <Text style={styles.headerTitle}>Create New Post</Text>
           <View style={{ width: 40 }} />
         </View>
-
-        <ScrollView contentContainerStyle={styles.scrollContent}>
           {/* Item Type Selector */}
           <Text style={styles.label}>Item Type</Text>
           <View style={styles.typeRow}>
@@ -463,8 +461,7 @@ export default function CreatePostScreen() {
               <Text style={styles.submitText}>Publish Post</Text>
             )}
           </TouchableOpacity>
-        </ScrollView>
-      </View>
+      </KeyboardWrapper>
     </>
   );
 }

@@ -29,13 +29,14 @@ export const transformPostApiToUI = (apiPost: any): PostUI => {
     attributes: apiPost.attributes || {},
     estimatedAge: apiPost.estimatedAge || apiPost.estimated_age,
     estimatedBirthYear: apiPost.estimatedBirthYear || apiPost.estimated_birth_year,
+    hasActiveClaim: apiPost.has_active_claim,
   };
 };
 
 export const fetchPosts = async (params?: {
   item_type?: string;
   status?: string;
-  query?: string;
+  search?: string;
   scope_id?: string;
 }): Promise<PostUI[]> => {
   const response = await api.get<any>('/posts', { params });
@@ -72,11 +73,12 @@ export const fetchPostComments = async (postId: string): Promise<CommentUI[]> =>
     userFullName: c.username || c.userFullName || c.user_full_name || 'Anonymous',
     userEmail: c.userEmail || c.user_email || '',
     profilePictureUrl: c.avatar || c.profilePictureUrl || c.profile_picture_url || '',
+    parentCommentId: c.parentCommentId || c.parent_comment_id ? String(c.parentCommentId || c.parent_comment_id) : undefined,
   }));
 };
 
-export const createPostComment = async (postId: string, content: string): Promise<CommentUI> => {
-  const response = await api.post(`/posts/${postId}/comments`, { content });
+export const createPostComment = async (postId: string, content: string, parentCommentId?: string): Promise<CommentUI> => {
+  const response = await api.post(`/posts/${postId}/comments`, { content, parentCommentId });
   const c = response.data?.data ?? response.data;
   return {
     commentId: String(c.id || c.commentId || c.comment_id || Math.random().toString()),
@@ -85,5 +87,6 @@ export const createPostComment = async (postId: string, content: string): Promis
     content: c.text || c.content || content,
     createdAt: c.time_ago || c.timeAgo || c.createdAt || c.created_at || new Date().toISOString(),
     userFullName: c.username || c.userFullName || c.user_full_name || 'You',
+    parentCommentId: c.parentCommentId || c.parent_comment_id ? String(c.parentCommentId || c.parent_comment_id) : undefined,
   };
 };

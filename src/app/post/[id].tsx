@@ -11,6 +11,7 @@ import {
   StyleSheet,
   Dimensions,
 } from 'react-native';
+import { KeyboardWrapper } from '../../components/KeyboardWrapper';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import MapComponent from '../../components/MapComponent';
 
@@ -19,9 +20,71 @@ import { createClaim } from '../../services/claimsApi';
 import { getStoredUser } from '../../services/authApi';
 import { PostUI, CommentUI } from '../../types/postTypes';
 import { formatRelativeTime } from '../../utils/time';
-import { ArrowLeft, MapPin, Send, Tag, User, ShieldCheck } from 'lucide-react-native';
+import { ArrowLeft, MapPin, Send, Tag, User, ShieldCheck, X } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
+
+interface CommentNode extends CommentUI {
+  children: CommentNode[];
+}
+
+const buildCommentTree = (commentsList: CommentUI[]): CommentNode[] => {
+  const commentMap: { [key: string]: CommentNode } = {};
+  const roots: CommentNode[] = [];
+
+  commentsList.forEach(c => {
+    commentMap[c.commentId] = { ...c, children: [] };
+  });
+
+  commentsList.forEach(c => {
+    if (c.parentCommentId && commentMap[c.parentCommentId]) {
+      commentMap[c.parentCommentId].children.push(commentMap[c.commentId]);
+    } else {
+      roots.push(commentMap[c.commentId]);
+    }
+  });
+
+  const sortNodes = (nodes: CommentNode[]) => {
+    nodes.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    nodes.forEach(n => sortNodes(n.children));
+  };
+  sortNodes(roots);
+  return roots;
+};
+
+const CommentItem = ({ node, depth = 0, onReply }: { node: CommentNode; depth?: number; onReply: (id: string, name: string) => void }) => {
+  const maxDepth = 3;
+  const currentDepth = Math.min(depth, maxDepth);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const hasChildren = node.children && node.children.length > 0;
+  
+  return (
+    <View style={{ marginLeft: currentDepth > 0 ? 16 : 0, borderLeftWidth: currentDepth > 0 ? 2 : 0, borderLeftColor: '#334155', paddingLeft: currentDepth > 0 ? 12 : 0, marginTop: currentDepth > 0 ? 8 : 0 }}>
+      <View style={styles.commentCard}>
+        <View style={styles.commentHeader}>
+          <Text style={styles.commentAuthor}>{node.userFullName}</Text>
+          <Text style={styles.commentDate}>{formatRelativeTime(node.createdAt)}</Text>
+        </View>
+        <Text style={styles.commentContent}>{node.content}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+          <TouchableOpacity style={styles.replyButton} onPress={() => onReply(node.commentId, node.userFullName)}>
+            <Text style={styles.replyButtonText}>Reply</Text>
+          </TouchableOpacity>
+          {hasChildren && (
+            <TouchableOpacity style={styles.replyButton} onPress={() => setIsExpanded(!isExpanded)}>
+              <Text style={[styles.replyButtonText, { color: '#94a3b8' }]}>
+                {isExpanded ? 'Hide replies' : `See replies (${node.children.length})`}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </View>
+      {isExpanded && node.children.map(child => (
+        <CommentItem key={child.commentId} node={child} depth={depth + 1} onReply={onReply} />
+      ))}
+    </View>
+  );
+};
 
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -30,6 +93,7 @@ export default function PostDetailScreen() {
   const [post, setPost] = useState<PostUI | null>(null);
   const [comments, setComments] = useState<CommentUI[]>([]);
   const [newComment, setNewComment] = useState('');
+  const [replyingTo, setReplyingTo] = useState<{ id: string; name: string } | null>(null);
   const [claimMessage, setClaimMessage] = useState('');
   const [showClaimBox, setShowClaimBox] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -63,9 +127,10 @@ export default function PostDetailScreen() {
     if (!newComment.trim() || !id) return;
     setSubmittingComment(true);
     try {
-      const created = await createPostComment(id, newComment.trim());
-      setComments((prev) => [created, ...prev]);
+      const created = await createPostComment(id, newComment.trim(), replyingTo?.id);
+      setComments((prev) => [...prev, created]);
       setNewComment('');
+      setReplyingTo(null);
     } catch (e) {
       Alert.alert('Error', 'Failed to post comment');
     } finally {
@@ -110,7 +175,7 @@ export default function PostDetailScreen() {
 
   return (
     <>
-      <View style={styles.container}>
+      <KeyboardWrapper type="scrollable" style={styles.container} contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -122,8 +187,7 @@ export default function PostDetailScreen() {
           <View style={{ width: 40 }} />
         </View>
 
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          {/* Main Carousel / Images */}
+        {/* Main Carousel / Images */}
           {post.images.length > 0 && (
             <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={styles.carousel}>
               {post.images.map((uri, index) => (
@@ -174,10 +238,12 @@ export default function PostDetailScreen() {
             )}
 
             {/* Author Info */}
-            <View style={styles.authorCard}>
-              <User size={18} color="#3b82f6" />
-              <Text style={styles.authorName}>Posted by {post.userFullName}</Text>
-            </View>
+            {post.userFullName !== 'Anonymous User' && (
+              <View style={styles.authorCard}>
+                <User size={18} color="#3b82f6" />
+                <Text style={styles.authorName}>Posted by {post.userFullName}</Text>
+              </View>
+            )}
 
             {/* Location & Native Map View */}
             {post.latitude != null && post.longitude != null && (
@@ -214,7 +280,12 @@ export default function PostDetailScreen() {
             {/* Claim Action Box */}
             {isFound && !isOwner && post.status === 'OPEN' && (
               <View style={styles.claimSection}>
-                {!showClaimBox ? (
+                {post.hasActiveClaim ? (
+                  <View style={[styles.claimButton, { backgroundColor: '#475569' }]}>
+                    <ShieldCheck size={20} color="#94a3b8" />
+                    <Text style={[styles.claimButtonText, { color: '#94a3b8' }]}>Already Claimed</Text>
+                  </View>
+                ) : !showClaimBox ? (
                   <TouchableOpacity
                     style={styles.claimButton}
                     onPress={() => setShowClaimBox(true)}
@@ -264,10 +335,20 @@ export default function PostDetailScreen() {
             <View style={styles.commentSection}>
               <Text style={styles.commentHeaderTitle}>Comments ({comments.length})</Text>
 
+              {/* Reply Indicator */}
+              {replyingTo && (
+                <View style={styles.replyIndicatorRow}>
+                  <Text style={styles.replyIndicatorText}>Replying to {replyingTo.name}...</Text>
+                  <TouchableOpacity onPress={() => setReplyingTo(null)}>
+                    <X size={16} color="#94a3b8" />
+                  </TouchableOpacity>
+                </View>
+              )}
+
               {/* Add Comment Input */}
               <View style={styles.commentInputRow}>
                 <TextInput
-                  placeholder="Write a comment..."
+                  placeholder={replyingTo ? "Write a reply..." : "Write a comment..."}
                   placeholderTextColor="#64748b"
                   style={styles.commentInput}
                   value={newComment}
@@ -284,19 +365,16 @@ export default function PostDetailScreen() {
               </View>
 
               {/* Comment Thread List */}
-              {comments.map((item) => (
-                <View key={item.commentId} style={styles.commentCard}>
-                  <Text style={styles.commentAuthor}>{item.userFullName}</Text>
-                  <Text style={styles.commentContent}>{item.content}</Text>
-                  <Text style={styles.commentDate}>
-                    {formatRelativeTime(item.createdAt)}
-                  </Text>
-                </View>
+              {buildCommentTree(comments).map((item) => (
+                <CommentItem 
+                  key={item.commentId} 
+                  node={item} 
+                  onReply={(id, name) => setReplyingTo({ id, name })} 
+                />
               ))}
             </View>
           </View>
-        </ScrollView>
-      </View>
+      </KeyboardWrapper>
     </>
   );
 }
@@ -607,11 +685,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#334155',
   },
+  commentHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
   commentAuthor: {
     fontSize: 13,
     fontWeight: 'bold',
     color: '#38bdf8',
-    marginBottom: 2,
   },
   commentContent: {
     fontSize: 14,
@@ -622,5 +705,30 @@ const styles = StyleSheet.create({
   commentDate: {
     fontSize: 11,
     color: '#64748b',
+  },
+  replyButton: {
+    alignSelf: 'flex-start',
+    marginTop: 4,
+  },
+  replyButtonText: {
+    fontSize: 12,
+    color: '#38bdf8',
+    fontWeight: '600',
+  },
+  replyIndicatorRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#1e293b',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#3b82f6',
+  },
+  replyIndicatorText: {
+    color: '#94a3b8',
+    fontSize: 13,
+    fontWeight: '500',
   },
 });

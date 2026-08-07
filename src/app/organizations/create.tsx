@@ -5,6 +5,7 @@ import { createOrganization } from '../../services/organizationsApi';
 import { JoinPolicy } from '../../types/organizationTypes';
 import { ArrowLeft, Building2 } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { KeyboardWrapper } from '../../components/KeyboardWrapper';
 
 export default function CreateOrganizationScreen() {
   const router = useRouter();
@@ -32,7 +33,7 @@ export default function CreateOrganizationScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#0f172a' }}>
-      <View style={styles.container}>
+      <KeyboardWrapper type="scrollable" style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <ArrowLeft size={20} color="#f8fafc" />
@@ -87,7 +88,7 @@ export default function CreateOrganizationScreen() {
             {loading ? <ActivityIndicator color="#ffffff" /> : <Text style={styles.submitText}>Create Organization</Text>}
           </TouchableOpacity>
         </View>
-      </View>
+      </KeyboardWrapper>
     </SafeAreaView>
   );
 }

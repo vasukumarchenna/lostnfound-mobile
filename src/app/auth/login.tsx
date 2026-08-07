@@ -4,15 +4,13 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { KeyboardWrapper } from '../../components/KeyboardWrapper';
 import { loginApi, signupApi } from '../../services/authApi';
 
 export default function AuthScreen() {
@@ -72,11 +70,7 @@ export default function AuthScreen() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      style={styles.container}
-    >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+    <KeyboardWrapper type="scrollable" style={styles.container} contentContainerStyle={styles.scrollContent}>
         {/* Header Branding */}
         <View style={styles.header}>
           <View style={styles.iconBadge}>
@@ -187,8 +181,7 @@ export default function AuthScreen() {
             </Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardWrapper>
   );
 }
 

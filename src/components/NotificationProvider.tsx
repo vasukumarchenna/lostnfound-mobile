@@ -44,7 +44,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
               setUnreadCount((prev) => prev + 1);
             }
           } catch (e) {
-            console.error('Failed to parse SSE data', e);
+            console.warn('Failed to parse SSE data. Raw data:', event.data, e);
           }
         }
       });

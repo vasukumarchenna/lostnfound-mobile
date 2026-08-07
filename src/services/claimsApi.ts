@@ -104,3 +104,31 @@ export const verifyHandoverOtp = async (claimId: string, otp: string): Promise<{
   const response = await api.post(`/claims/${claimId}/verify-handover`, { otp });
   return response.data;
 };
+
+export const fetchClaimById = async (claimId: string): Promise<ClaimUI> => {
+  const response = await api.get(`/claims/${claimId}`);
+  const c = response.data?.data ?? response.data;
+  return {
+    claimId: String(c.claimId || c.claim_id),
+    postId: String(c.postId || c.post_id),
+    postTitle: c.postTitle || c.post_title || 'Item Claim',
+    itemType: c.itemType || c.item_type || 'FOUND',
+    claimantUserId: String(c.claimantUserId || c.claimant_user_id),
+    claimantName: c.claimantFullName || c.claimant_full_name || c.claimantName || c.claimant_name || 'User',
+    claimantEmail: c.claimantEmail || c.claimant_email || '',
+    claimMessage: c.claimMessage || c.claim_message,
+    status: c.status,
+    handoverOtp: c.handoverOtp || c.handover_otp,
+    resolvedAt: c.resolvedAt || c.resolved_at,
+    createdAt: c.createdAt || c.created_at,
+    postOwnerUserId: String(c.postOwnerId || c.post_owner_id || c.postOwnerUserId || c.post_owner_user_id),
+  };
+};
+
+export const withdrawClaim = async (claimId: string): Promise<void> => {
+  await api.put(`/claims/withdraw`, { claim_id: claimId });
+};
+
+export const revokeClaimApproval = async (claimId: string): Promise<void> => {
+  await api.post(`/claims/${claimId}/revoke-approval`);
+};

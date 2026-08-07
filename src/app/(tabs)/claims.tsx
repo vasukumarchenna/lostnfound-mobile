@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { ArrowLeft, Check, CheckCheck, KeyRound, MessageSquare, Send, ShieldCheck, X } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import {
@@ -95,9 +95,12 @@ export default function ClaimsScreen() {
     }
   }, [activeTab]);
 
-  useEffect(() => {
-    loadClaims();
-  }, [loadClaims]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadClaims();
+    }, [loadClaims])
+  );
 
   const handleUpdateStatus = async (claim: ClaimUI, newStatus: string) => {
     setActionLoading(claim.claimId);
@@ -226,7 +229,10 @@ export default function ClaimsScreen() {
     const isLoadingThis = actionLoading === item.claimId;
 
     return (
-      <View style={styles.card}>
+      <TouchableOpacity 
+        style={styles.card}
+        onPress={() => router.push(`/claims/${item.claimId}`)}
+      >
         {/* Header Title & Status Badge */}
         <View style={styles.cardHeader}>
           <Text style={styles.postTitle} numberOfLines={1}>
@@ -310,7 +316,7 @@ export default function ClaimsScreen() {
             )}
           </View>
         )}
-      </View>
+      </TouchableOpacity>
     );
   };
 

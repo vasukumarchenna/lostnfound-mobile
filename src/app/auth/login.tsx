@@ -34,7 +34,6 @@ export default function AuthScreen() {
 
     setLoading(true);
     try {
-      Alert.alert('Success', 'Login just started');
       if (isLogin) {
         await loginApi(email, password);
         router.replace('/');
@@ -71,116 +70,116 @@ export default function AuthScreen() {
 
   return (
     <KeyboardWrapper type="scrollable" style={styles.container} contentContainerStyle={styles.scrollContent}>
-        {/* Header Branding */}
-        <View style={styles.header}>
-          <View style={styles.iconBadge}>
-            <ShieldCheck size={36} color="#3b82f6" />
-          </View>
-          <Text style={styles.title}>Lost & Found</Text>
-          <Text style={styles.subtitle}>
-            {isLogin ? 'Sign in to manage lost & found items' : 'Create your account to get started'}
-          </Text>
+      {/* Header Branding */}
+      <View style={styles.header}>
+        <View style={styles.iconBadge}>
+          <ShieldCheck size={36} color="#3b82f6" />
+        </View>
+        <Text style={styles.title}>Lost & Found</Text>
+        <Text style={styles.subtitle}>
+          {isLogin ? 'Sign in to manage lost & found items' : 'Create your account to get started'}
+        </Text>
+      </View>
+
+      {/* Card Form */}
+      <View style={styles.formCard}>
+        {!isLogin && (
+          <>
+            <View style={styles.inputContainer}>
+              <User size={20} color="#94a3b8" style={styles.inputIcon} />
+              <TextInput
+                placeholder="Full Name"
+                placeholderTextColor="#94a3b8"
+                style={styles.input}
+                value={fullName}
+                onChangeText={setFullName}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <User size={20} color="#94a3b8" style={styles.inputIcon} />
+              <TextInput
+                placeholder="Username"
+                placeholderTextColor="#94a3b8"
+                style={styles.input}
+                value={username}
+                onChangeText={setUsername}
+                autoCapitalize="none"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Phone size={20} color="#94a3b8" style={styles.inputIcon} />
+              <TextInput
+                placeholder="Phone Number"
+                placeholderTextColor="#94a3b8"
+                style={styles.input}
+                keyboardType="phone-pad"
+                value={phone}
+                onChangeText={setPhone}
+              />
+            </View>
+          </>
+        )}
+
+        <View style={styles.inputContainer}>
+          <Mail size={20} color="#94a3b8" style={styles.inputIcon} />
+          <TextInput
+            placeholder="Email Address"
+            placeholderTextColor="#94a3b8"
+            style={styles.input}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
+          />
         </View>
 
-        {/* Card Form */}
-        <View style={styles.formCard}>
-          {!isLogin && (
-            <>
-              <View style={styles.inputContainer}>
-                <User size={20} color="#94a3b8" style={styles.inputIcon} />
-                <TextInput
-                  placeholder="Full Name"
-                  placeholderTextColor="#94a3b8"
-                  style={styles.input}
-                  value={fullName}
-                  onChangeText={setFullName}
-                />
-              </View>
-
-              <View style={styles.inputContainer}>
-                <User size={20} color="#94a3b8" style={styles.inputIcon} />
-                <TextInput
-                  placeholder="Username"
-                  placeholderTextColor="#94a3b8"
-                  style={styles.input}
-                  value={username}
-                  onChangeText={setUsername}
-                  autoCapitalize="none"
-                />
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Phone size={20} color="#94a3b8" style={styles.inputIcon} />
-                <TextInput
-                  placeholder="Phone Number"
-                  placeholderTextColor="#94a3b8"
-                  style={styles.input}
-                  keyboardType="phone-pad"
-                  value={phone}
-                  onChangeText={setPhone}
-                />
-              </View>
-            </>
-          )}
-
-          <View style={styles.inputContainer}>
-            <Mail size={20} color="#94a3b8" style={styles.inputIcon} />
-            <TextInput
-              placeholder="Email Address"
-              placeholderTextColor="#94a3b8"
-              style={styles.input}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={email}
-              onChangeText={setEmail}
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Lock size={20} color="#94a3b8" style={styles.inputIcon} />
-            <TextInput
-              placeholder="Password"
-              placeholderTextColor="#94a3b8"
-              style={styles.input}
-              secureTextEntry={!showPassword}
-              value={password}
-              onChangeText={setPassword}
-            />
-            <TouchableOpacity
-              onPress={() => setShowPassword(!showPassword)}
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-              style={styles.eyeIconContainer}
-            >
-              {showPassword ? (
-                <EyeOff size={20} color="#94a3b8" />
-              ) : (
-                <Eye size={20} color="#94a3b8" />
-              )}
-            </TouchableOpacity>
-          </View>
-
+        <View style={styles.inputContainer}>
+          <Lock size={20} color="#94a3b8" style={styles.inputIcon} />
+          <TextInput
+            placeholder="Password"
+            placeholderTextColor="#94a3b8"
+            style={styles.input}
+            secureTextEntry={!showPassword}
+            value={password}
+            onChangeText={setPassword}
+          />
           <TouchableOpacity
-            style={[styles.submitButton, loading && styles.buttonDisabled]}
-            disabled={loading}
-            onPress={handleAuth}
+            onPress={() => setShowPassword(!showPassword)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={styles.eyeIconContainer}
           >
-            {loading ? (
-              <ActivityIndicator color="#ffffff" />
+            {showPassword ? (
+              <EyeOff size={20} color="#94a3b8" />
             ) : (
-              <Text style={styles.submitButtonText}>{isLogin ? 'Sign In' : 'Create Account'}</Text>
+              <Eye size={20} color="#94a3b8" />
             )}
           </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.toggleButton}
-            onPress={() => setIsLogin(!isLogin)}
-          >
-            <Text style={styles.toggleText}>
-              {isLogin ? "Don't have an account? " : 'Already have an account? '}
-              <Text style={styles.toggleHighlight}>{isLogin ? 'Sign Up' : 'Sign In'}</Text>
-            </Text>
-          </TouchableOpacity>
         </View>
+
+        <TouchableOpacity
+          style={[styles.submitButton, loading && styles.buttonDisabled]}
+          disabled={loading}
+          onPress={handleAuth}
+        >
+          {loading ? (
+            <ActivityIndicator color="#ffffff" />
+          ) : (
+            <Text style={styles.submitButtonText}>{isLogin ? 'Sign In' : 'Create Account'}</Text>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.toggleButton}
+          onPress={() => setIsLogin(!isLogin)}
+        >
+          <Text style={styles.toggleText}>
+            {isLogin ? "Don't have an account? " : 'Already have an account? '}
+            <Text style={styles.toggleHighlight}>{isLogin ? 'Sign Up' : 'Sign In'}</Text>
+          </Text>
+        </TouchableOpacity>
+      </View>
     </KeyboardWrapper>
   );
 }

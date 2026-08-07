@@ -2,6 +2,7 @@ export interface ClaimUI {
   claimId: string;
   postId: string;
   postTitle?: string;
+  postContent?: string;
   itemType?: string;
   claimantUserId: string;
   claimantName?: string;

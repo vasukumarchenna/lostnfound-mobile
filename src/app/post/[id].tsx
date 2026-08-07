@@ -52,7 +52,7 @@ const buildCommentTree = (commentsList: CommentUI[]): CommentNode[] => {
   return roots;
 };
 
-const CommentItem = ({ node, depth = 0, onReply }: { node: CommentNode; depth?: number; onReply: (id: string, name: string) => void }) => {
+const CommentItem = ({ node, depth = 0, onReply, renderReplyInput }: { node: CommentNode; depth?: number; onReply: (id: string, name: string) => void, renderReplyInput?: (id: string) => React.ReactNode }) => {
   const maxDepth = 3;
   const currentDepth = Math.min(depth, maxDepth);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -79,8 +79,9 @@ const CommentItem = ({ node, depth = 0, onReply }: { node: CommentNode; depth?: 
           )}
         </View>
       </View>
+      {renderReplyInput && renderReplyInput(node.commentId)}
       {isExpanded && node.children.map(child => (
-        <CommentItem key={child.commentId} node={child} depth={depth + 1} onReply={onReply} />
+        <CommentItem key={child.commentId} node={child} depth={depth + 1} onReply={onReply} renderReplyInput={renderReplyInput} />
       ))}
     </View>
   );
@@ -202,13 +203,12 @@ export default function PostDetailScreen() {
               <View style={[styles.typeBadge, isFound ? styles.badgeFound : styles.badgeLost]}>
                 <Text style={styles.typeBadgeText}>{post.itemType}</Text>
               </View>
+              {post.classificationName && (
+                <View style={styles.categoryBadge}>
+                  <Text style={styles.categoryBadgeText}>{post.classificationName}</Text>
+                </View>
+              )}
             </View>
-
-            {post.classificationName && (
-              <View style={styles.categoryBadge}>
-                <Text style={styles.categoryBadgeText}>Category: {post.classificationName}</Text>
-              </View>
-            )}
 
             <Text style={styles.title}>{post.title}</Text>
             <Text style={styles.description}>{post.content}</Text>
@@ -335,41 +335,63 @@ export default function PostDetailScreen() {
             <View style={styles.commentSection}>
               <Text style={styles.commentHeaderTitle}>Comments ({comments.length})</Text>
 
-              {/* Reply Indicator */}
-              {replyingTo && (
-                <View style={styles.replyIndicatorRow}>
-                  <Text style={styles.replyIndicatorText}>Replying to {replyingTo.name}...</Text>
-                  <TouchableOpacity onPress={() => setReplyingTo(null)}>
-                    <X size={16} color="#94a3b8" />
+              {/* Add Comment Input (Top-Level) */}
+              {!replyingTo && (
+                <View style={styles.commentInputRow}>
+                  <TextInput
+                    placeholder="Write a comment..."
+                    placeholderTextColor="#64748b"
+                    style={styles.commentInput}
+                    value={newComment}
+                    onChangeText={setNewComment}
+                  />
+
+                  <TouchableOpacity
+                    style={[styles.sendButton, submittingComment && styles.buttonDisabled]}
+                    disabled={submittingComment}
+                    onPress={handleAddComment}
+                  >
+                    <Send size={18} color="#ffffff" />
                   </TouchableOpacity>
                 </View>
               )}
-
-              {/* Add Comment Input */}
-              <View style={styles.commentInputRow}>
-                <TextInput
-                  placeholder={replyingTo ? "Write a reply..." : "Write a comment..."}
-                  placeholderTextColor="#64748b"
-                  style={styles.commentInput}
-                  value={newComment}
-                  onChangeText={setNewComment}
-                />
-
-                <TouchableOpacity
-                  style={[styles.sendButton, submittingComment && styles.buttonDisabled]}
-                  disabled={submittingComment}
-                  onPress={handleAddComment}
-                >
-                  <Send size={18} color="#ffffff" />
-                </TouchableOpacity>
-              </View>
 
               {/* Comment Thread List */}
               {buildCommentTree(comments).map((item) => (
                 <CommentItem 
                   key={item.commentId} 
                   node={item} 
-                  onReply={(id, name) => setReplyingTo({ id, name })} 
+                  onReply={(id, name) => {
+                    setReplyingTo({ id, name });
+                    setNewComment('');
+                  }}
+                  renderReplyInput={(id) => {
+                    if (replyingTo?.id !== id) return null;
+                    return (
+                      <View style={styles.inlineReplyContainer}>
+                        <TextInput
+                          placeholder={`Reply to ${replyingTo.name}...`}
+                          placeholderTextColor="#64748b"
+                          style={styles.inlineReplyInput}
+                          value={newComment}
+                          onChangeText={setNewComment}
+                          autoFocus
+                        />
+                        <View style={styles.inlineReplyActions}>
+                          <TouchableOpacity style={styles.cancelReplyBtn} onPress={() => { setReplyingTo(null); setNewComment(''); }}>
+                            <Text style={styles.cancelReplyText}>Cancel</Text>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={[styles.sendReplyBtn, submittingComment && styles.buttonDisabled]}
+                            disabled={submittingComment}
+                            onPress={handleAddComment}
+                          >
+                            {submittingComment ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.sendReplyText}>Send</Text>}
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    );
+                  }}
                 />
               ))}
             </View>
@@ -467,19 +489,17 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   categoryBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
     borderRadius: 8,
     backgroundColor: 'rgba(59, 130, 246, 0.15)',
-    alignSelf: 'flex-start',
-    marginBottom: 12,
     borderWidth: 1,
     borderColor: '#3b82f6',
   },
   categoryBadgeText: {
     color: '#93c5fd',
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   title: {
     fontSize: 22,
@@ -676,6 +696,47 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  inlineReplyContainer: {
+    marginTop: 8,
+    marginLeft: 16,
+    padding: 10,
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  inlineReplyInput: {
+    color: '#f8fafc',
+    fontSize: 14,
+    minHeight: 40,
+  },
+  inlineReplyActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 8,
+  },
+  cancelReplyBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  cancelReplyText: {
+    color: '#94a3b8',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  sendReplyBtn: {
+    backgroundColor: '#3b82f6',
+    paddingVertical: 6,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+  },
+  sendReplyText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: 'bold',
   },
   commentCard: {
     backgroundColor: '#1e293b',

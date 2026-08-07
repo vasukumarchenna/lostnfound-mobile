@@ -45,6 +45,13 @@ export const fetchPosts = async (params?: {
   return list.map(transformPostApiToUI);
 };
 
+export const fetchMyPosts = async (): Promise<PostUI[]> => {
+  const response = await api.get<any>('/posts/me');
+  const raw = response.data?.data ?? response.data;
+  const list = Array.isArray(raw) ? raw : [];
+  return list.map(transformPostApiToUI);
+};
+
 export const fetchPostById = async (postId: string): Promise<PostUI> => {
   const response = await api.get<any>(`/posts/${postId}`);
   const raw = response.data?.data ?? response.data;

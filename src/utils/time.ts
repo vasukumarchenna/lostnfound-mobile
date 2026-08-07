@@ -1,6 +1,12 @@
 export const formatRelativeTime = (dateString: string): string => {
   if (!dateString) return "";
+  if (dateString.toLowerCase().includes('ago') || dateString.toLowerCase().includes('just now')) {
+    return dateString;
+  }
   const date = new Date(dateString);
+  if (isNaN(date.getTime())) {
+    return dateString; // fallback
+  }
   const now = new Date();
   const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
   

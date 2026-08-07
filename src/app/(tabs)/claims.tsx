@@ -394,6 +394,7 @@ export default function ClaimsScreen() {
                 ref={scrollViewRef}
                 style={styles.chatScroll}
                 contentContainerStyle={styles.chatContent}
+                onLayout={() => scrollViewRef.current?.scrollToEnd({ animated: false })}
                 onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
               >
                 {chatMessages.map((msg) => (

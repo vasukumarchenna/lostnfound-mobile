@@ -200,32 +200,36 @@ export default function ClaimDetailsScreen() {
             <Text style={styles.cardTitle}>Post Information</Text>
           </View>
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Item</Text>
+            <Text style={styles.infoLabel}>Title</Text>
             <Text style={styles.infoValue}>{claim.postTitle}</Text>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Type</Text>
-            <Text style={styles.infoValue}>{claim.itemType}</Text>
-          </View>
-        </View>
-
-        {/* Claimant Info */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <User size={20} color="#3b82f6" style={styles.icon} />
-            <Text style={styles.cardTitle}>Claimant Details</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Name</Text>
-            <Text style={styles.infoValue}>{isClaimant ? 'You' : claim.claimantName}</Text>
-          </View>
-          {claim.claimantEmail ? (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Email</Text>
-              <Text style={styles.infoValue}>{claim.claimantEmail}</Text>
+          {claim.postContent ? (
+            <View style={{ marginTop: 4, marginBottom: 12 }}>
+              <Text style={[styles.infoLabel, { marginBottom: 4 }]}>Description</Text>
+              <Text style={styles.messageText}>{claim.postContent}</Text>
             </View>
           ) : null}
         </View>
+
+        {/* Claimant Info */}
+        {!isClaimant && (
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <User size={20} color="#3b82f6" style={styles.icon} />
+              <Text style={styles.cardTitle}>Claimant Details</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Name</Text>
+              <Text style={styles.infoValue}>{claim.claimantName}</Text>
+            </View>
+            {claim.claimantEmail ? (
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>Email</Text>
+                <Text style={styles.infoValue}>{claim.claimantEmail}</Text>
+              </View>
+            ) : null}
+          </View>
+        )}
 
         {/* Message */}
         <View style={styles.card}>

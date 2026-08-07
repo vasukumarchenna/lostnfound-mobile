@@ -9,8 +9,7 @@ import {
   Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { fetchPosts } from '../services/postsApi';
-import { getStoredUser } from '../services/authApi';
+import { fetchMyPosts } from '../services/postsApi';
 import { PostUI } from '../types/postTypes';
 import { ArrowLeft, MapPin, Search } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -23,12 +22,8 @@ export default function MyPostsScreen() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const allPosts = await fetchPosts();
-      const user = await getStoredUser();
-      if (user) {
-        const mine = allPosts.filter((p) => p.userId === user.userId);
-        setPosts(mine);
-      }
+      const mine = await fetchMyPosts();
+      setPosts(mine);
     } catch (e) {
       console.log('Error fetching my posts', e);
     } finally {
@@ -54,21 +49,23 @@ export default function MyPostsScreen() {
               {isLost ? 'LOST' : 'FOUND'}
             </Text>
           </View>
-          <View
-            style={[
-              styles.statusBadge,
-              item.status === 'RESOLVED' ? styles.resolvedBadge : styles.openBadge,
-            ]}
-          >
-            <Text
+          {!!item.status && (
+            <View
               style={[
-                styles.statusBadgeText,
-                item.status === 'RESOLVED' ? styles.resolvedText : styles.openText,
+                styles.statusBadge,
+                item.status === 'RESOLVED' ? styles.resolvedBadge : styles.openBadge,
               ]}
             >
-              {item.status}
-            </Text>
-          </View>
+              <Text
+                style={[
+                  styles.statusBadgeText,
+                  item.status === 'RESOLVED' ? styles.resolvedText : styles.openText,
+                ]}
+              >
+                {item.status}
+              </Text>
+            </View>
+          )}
         </View>
 
         <Text style={styles.postTitle} numberOfLines={2}>
@@ -90,37 +87,35 @@ export default function MyPostsScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0f172a' }}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <ArrowLeft size={20} color="#f8fafc" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>My Posts</Text>
-          <View style={{ width: 40 }} />
-        </View>
-
-        {loading ? (
-          <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color="#3b82f6" />
-          </View>
-        ) : (
-          <FlatList
-            data={posts}
-            keyExtractor={(item) => item.id}
-            renderItem={renderPost}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={
-              <View style={styles.emptyContainer}>
-                <Search size={48} color="#334155" />
-                <Text style={styles.emptyText}>You haven't posted anything yet</Text>
-              </View>
-            }
-          />
-        )}
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <ArrowLeft size={20} color="#f8fafc" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>My Posts</Text>
+        <View style={{ width: 40 }} />
       </View>
-    </SafeAreaView>
+
+      {loading ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color="#3b82f6" />
+        </View>
+      ) : (
+        <FlatList
+          data={posts}
+          keyExtractor={(item) => item.id}
+          renderItem={renderPost}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Search size={48} color="#334155" />
+              <Text style={styles.emptyText}>You haven't posted anything yet</Text>
+            </View>
+          }
+        />
+      )}
+    </View>
   );
 }
 
@@ -134,7 +129,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#1e293b',
   },
@@ -160,6 +155,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
+    paddingTop: 8,
   },
   postCard: {
     backgroundColor: '#1e293b',

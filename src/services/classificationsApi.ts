@@ -1,9 +1,10 @@
-import { getAPIUrl } from './api';
+import { api } from './api';
 
 export interface ClassificationAttribute {
   attribute_id: number;
   classification_id: number;
   name: string;
+  display_label?: string;
   data_type: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE';
   is_required: boolean;
   options: string[] | null;
@@ -23,19 +24,9 @@ export interface ClassificationTreeItem {
 }
 
 export const fetchClassificationTree = async (): Promise<ClassificationTreeItem[]> => {
-  const url = `${getAPIUrl()}/classifications`;
   try {
-    const res = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    if (!res.ok) {
-      throw new Error(`Failed to fetch classifications: ${res.statusText}`);
-    }
-    const json = await res.json();
-    return json.data || [];
+    const res = await api.get<any>('/classifications');
+    return res.data?.data || res.data || [];
   } catch (error) {
     console.error("Error fetching classification tree:", error);
     throw error;

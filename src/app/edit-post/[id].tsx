@@ -12,29 +12,32 @@ import {
   Platform,
 } from 'react-native';
 import { KeyboardWrapper } from '../../components/KeyboardWrapper';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as Location from 'expo-location';
-import { createPostApi } from '../../services/postsApi';
+import { fetchMyPostById, updatePostApi } from '../../services/postsApi';
 import { getStoredUser } from '../../services/authApi';
 import { fetchClassificationTree, ClassificationTreeItem, ClassificationAttribute } from '../../services/classificationsApi';
 import { CategoryPicker } from '../../components/CategoryPicker';
 import MapComponent from '../../components/MapComponent';
 import { ArrowLeft, Camera, Image as ImageIcon, MapPin, X, ChevronRight } from 'lucide-react-native';
 
-export default function CreatePostScreen() {
+export default function EditPostScreen() {
   const router = useRouter();
+  const { id } = useLocalSearchParams();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [locationText, setLocationText] = useState('');
   const [tags, setTags] = useState('');
   const [itemType, setItemType] = useState<'LOST' | 'FOUND'>('LOST');
-  const [images, setImages] = useState<string[]>([]);
+  const [keptImages, setKeptImages] = useState<string[]>([]);
+  const [newImages, setNewImages] = useState<string[]>([]);
   const [latitude, setLatitude] = useState<number | undefined>(undefined);
   const [longitude, setLongitude] = useState<number | undefined>(undefined);
   const [buildingName, setBuildingName] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [locating, setLocating] = useState(false);
+  const [loadingPost, setLoadingPost] = useState(true);
 
   // Classification State
   const [classificationTree, setClassificationTree] = useState<ClassificationTreeItem[]>([]);
@@ -42,6 +45,31 @@ export default function CreatePostScreen() {
   const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<number | null>(null);
   const [attributes, setAttributes] = useState<Record<string, any>>({});
   const [loadingCategories, setLoadingCategories] = useState(true);
+
+  React.useEffect(() => {
+    const loadPost = async () => {
+      try {
+        if (!id) return;
+        const post = await fetchMyPostById(id as string);
+        setTitle(post.title);
+        setContent(post.content);
+        setLocationText(post.location || '');
+        setTags(post.tags || '');
+        setItemType(post.itemType as any);
+        setKeptImages(post.images || []);
+        setLatitude(post.latitude);
+        setLongitude(post.longitude);
+        setBuildingName(post.buildingName || '');
+        setAttributes(post.attributes || {});
+      } catch (e) {
+        Alert.alert('Error', 'Failed to load post');
+        router.back();
+      } finally {
+        setLoadingPost(false);
+      }
+    };
+    loadPost();
+  }, [id]);
 
   React.useEffect(() => {
     const loadCategories = async () => {
@@ -68,8 +96,10 @@ export default function CreatePostScreen() {
     setAttributes((prev) => ({ ...prev, [attrName]: value }));
   };
 
+  const totalImages = keptImages.length + newImages.length;
+
   const pickImage = async () => {
-    if (images.length >= 5) {
+    if (totalImages >= 5) {
       Alert.alert('Limit Reached', 'You can only upload a maximum of 5 images');
       return;
     }
@@ -84,17 +114,17 @@ export default function CreatePostScreen() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       quality: 0.8,
       allowsMultipleSelection: true,
-      selectionLimit: 5 - images.length,
+      selectionLimit: 5 - totalImages,
     });
 
     if (!result.canceled && result.assets) {
       const selectedUris = result.assets.map((asset) => asset.uri);
-      setImages((prev) => [...prev, ...selectedUris].slice(0, 5));
+      setNewImages((prev) => [...prev, ...selectedUris].slice(0, 5 - keptImages.length));
     }
   };
 
   const capturePhoto = async () => {
-    if (images.length >= 5) {
+    if (totalImages >= 5) {
       Alert.alert('Limit Reached', 'You can only upload a maximum of 5 images');
       return;
     }
@@ -110,7 +140,7 @@ export default function CreatePostScreen() {
     });
 
     if (!result.canceled && result.assets && result.assets[0]) {
-      setImages((prev) => [...prev, result.assets[0].uri].slice(0, 5));
+      setNewImages((prev) => [...prev, result.assets[0].uri].slice(0, 5 - keptImages.length));
     }
   };
 
@@ -152,7 +182,7 @@ export default function CreatePostScreen() {
       return;
     }
 
-    if (images.length === 0) {
+    if (keptImages.length + newImages.length === 0) {
       Alert.alert('Validation Error', 'Please attach at least 1 image');
       return;
     }
@@ -166,7 +196,6 @@ export default function CreatePostScreen() {
       formData.append('content', content);
       formData.append('userId', storedUser?.userId || '1');
       formData.append('item_type', itemType);
-      formData.append('status', 'OPEN');
       formData.append('location', locationText);
       formData.append('tags', tags);
       formData.append('scope_id', '0'); // Public scope
@@ -183,8 +212,13 @@ export default function CreatePostScreen() {
         formData.append('attributes', JSON.stringify(attributes));
       }
 
-      // Attach image files
-      images.forEach((uri, index) => {
+      // Attach kept image files (as existing URLs or strings)
+      keptImages.forEach(img => {
+        formData.append('kept_images', img);
+      });
+
+      // Attach new image files
+      newImages.forEach((uri, index) => {
         const fileType = uri.endsWith('.png') ? 'image/png' : 'image/jpeg';
         formData.append('images', {
           uri,
@@ -193,25 +227,33 @@ export default function CreatePostScreen() {
         } as any);
       });
 
-      await createPostApi(formData);
-      Alert.alert('Success', 'Post created successfully!');
+      await updatePostApi(id as string, formData);
+      Alert.alert('Success', 'Post updated successfully!');
       router.replace('/');
     } catch (error: any) {
-      Alert.alert('Failed to Create Post', error.response?.data?.error || error.message);
+      Alert.alert('Failed to Update Post', error.response?.data?.error || error.message);
     } finally {
       setSubmitting(false);
     }
   };
+
+  if (loadingPost) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#3b82f6" />
+      </View>
+    );
+  }
 
   return (
     <>
       <KeyboardWrapper type="scrollable" style={styles.container} contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <TouchableOpacity style={styles.backButton} onPress={() => router.canGoBack() ? router.back() : router.replace('/')}>
             <ArrowLeft size={20} color="#f8fafc" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Create New Post</Text>
+          <Text style={styles.headerTitle}>Edit Post</Text>
           <View style={{ width: 40 }} />
         </View>
           {/* Item Type Selector */}
@@ -393,14 +435,25 @@ export default function CreatePostScreen() {
           </View>
 
           {/* Image Thumbnails */}
-          {images.length > 0 && (
+          {(keptImages.length > 0 || newImages.length > 0) && (
             <View style={styles.thumbnailGrid}>
-              {images.map((uri, index) => (
-                <View key={index} style={styles.thumbnailContainer}>
+              {keptImages.map((uri, index) => (
+                <View key={`kept-${index}`} style={styles.thumbnailContainer}>
                   <Image source={{ uri }} style={styles.thumbnail} />
                   <TouchableOpacity
                     style={styles.removeImageButton}
-                    onPress={() => setImages((prev) => prev.filter((_, i) => i !== index))}
+                    onPress={() => setKeptImages((prev) => prev.filter((_, i) => i !== index))}
+                  >
+                    <X size={14} color="#ffffff" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+              {newImages.map((uri, index) => (
+                <View key={`new-${index}`} style={styles.thumbnailContainer}>
+                  <Image source={{ uri }} style={styles.thumbnail} />
+                  <TouchableOpacity
+                    style={styles.removeImageButton}
+                    onPress={() => setNewImages((prev) => prev.filter((_, i) => i !== index))}
                   >
                     <X size={14} color="#ffffff" />
                   </TouchableOpacity>
@@ -428,7 +481,7 @@ export default function CreatePostScreen() {
             {submitting ? (
               <ActivityIndicator color="#ffffff" />
             ) : (
-              <Text style={styles.submitText}>Publish Post</Text>
+              <Text style={styles.submitText}>Update Post</Text>
             )}
           </TouchableOpacity>
       </KeyboardWrapper>

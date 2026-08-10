@@ -52,6 +52,12 @@ export const fetchMyPosts = async (): Promise<PostUI[]> => {
   return list.map(transformPostApiToUI);
 };
 
+export const fetchMyPostById = async (postId: string): Promise<PostUI> => {
+  const response = await api.get<any>(`/posts/me/${postId}`);
+  const raw = response.data?.data ?? response.data;
+  return transformPostApiToUI(raw);
+};
+
 export const fetchPostById = async (postId: string): Promise<PostUI> => {
   const response = await api.get<any>(`/posts/${postId}`);
   const raw = response.data?.data ?? response.data;
@@ -60,6 +66,15 @@ export const fetchPostById = async (postId: string): Promise<PostUI> => {
 
 export const createPostApi = async (formData: FormData): Promise<{ postId: string }> => {
   const response = await api.post<any>('/posts', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data?.data ?? response.data;
+};
+
+export const updatePostApi = async (postId: string, formData: FormData): Promise<any> => {
+  const response = await api.put<any>(`/posts/me/${postId}`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },

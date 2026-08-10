@@ -20,7 +20,7 @@ import { createClaim } from '../../services/claimsApi';
 import { getStoredUser } from '../../services/authApi';
 import { PostUI, CommentUI } from '../../types/postTypes';
 import { formatRelativeTime } from '../../utils/time';
-import { ArrowLeft, MapPin, Send, Tag, User, ShieldCheck, X } from 'lucide-react-native';
+import { ArrowLeft, MapPin, Send, Tag, User, ShieldCheck, X, Edit3 } from 'lucide-react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -185,7 +185,13 @@ export default function PostDetailScreen() {
           <Text style={styles.headerTitle} numberOfLines={1}>
             {post.title}
           </Text>
-          <View style={{ width: 40 }} />
+          {isOwner ? (
+            <TouchableOpacity style={{ width: 40, alignItems: 'center' }} onPress={() => router.push(`/edit-post/${id}` as any)}>
+              <Edit3 size={20} color="#f8fafc" />
+            </TouchableOpacity>
+          ) : (
+            <View style={{ width: 40 }} />
+          )}
         </View>
 
         {/* Main Carousel / Images */}

@@ -5,11 +5,13 @@ export interface ClassificationAttribute {
   classification_id: number;
   name: string;
   display_label?: string;
-  data_type: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'DATE';
+  input_type?: string;
+  data_type?: string;
   is_required: boolean;
-  options: string[] | null;
-  display_order: number;
-  description: string;
+  options?: string[] | null;
+  allowed_values?: any;
+  display_order?: number;
+  description?: string;
 }
 
 export interface ClassificationTreeItem {

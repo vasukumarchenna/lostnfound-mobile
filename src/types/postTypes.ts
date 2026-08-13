@@ -37,6 +37,7 @@ export interface PostUI {
   userFullName?: string;
   userEmail?: string;
   userPhone?: string;
+  classificationId?: number;
   classificationName?: string;
   classificationSlug?: string;
   attributes?: Record<string, any>;

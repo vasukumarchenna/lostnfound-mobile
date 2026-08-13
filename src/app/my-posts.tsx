@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Image,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { fetchMyPosts } from '../services/postsApi';
 import { PostUI } from '../types/postTypes';
 import { ArrowLeft, MapPin, Search } from 'lucide-react-native';
@@ -16,8 +16,19 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function MyPostsScreen() {
   const router = useRouter();
+  const { from } = useLocalSearchParams();
   const [posts, setPosts] = useState<PostUI[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const handleBack = () => {
+    if (from === 'create' || from === 'edit') {
+      router.replace('/profile');
+    } else if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/profile');
+    }
+  };
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -89,7 +100,7 @@ export default function MyPostsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
           <ArrowLeft size={20} color="#f8fafc" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Posts</Text>

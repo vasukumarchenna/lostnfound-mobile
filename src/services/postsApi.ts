@@ -24,6 +24,7 @@ export const transformPostApiToUI = (apiPost: any): PostUI => {
     userFullName: apiPost.userFullName || apiPost.user_full_name || 'Anonymous User',
     userEmail: apiPost.userEmail || apiPost.user_email || '',
     userPhone: apiPost.userPhone || apiPost.user_phone || '',
+    classificationId: (apiPost.classificationId || apiPost.classification_id) ? Number(apiPost.classificationId || apiPost.classification_id) : undefined,
     classificationName: apiPost.classificationName || apiPost.classification_name || '',
     classificationSlug: apiPost.classificationSlug || apiPost.classification_slug || '',
     attributes: apiPost.attributes || {},

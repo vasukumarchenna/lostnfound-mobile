@@ -154,6 +154,7 @@ export default function PostDetailScreen() {
     try {
       await createClaim(id, claimMessage.trim());
       Alert.alert('Claim Submitted', 'Your claim has been submitted to the post owner!');
+      setPost((prev) => (prev ? { ...prev, hasActiveClaim: true } : prev));
       setShowClaimBox(false);
       setClaimMessage('');
     } catch (error: any) {

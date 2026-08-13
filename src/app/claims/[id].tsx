@@ -65,20 +65,36 @@ export default function ClaimDetailsScreen() {
     }
   };
 
-  const handleWithdraw = async () => {
+  const handleWithdraw = () => {
     if (!claim) return;
-    setActionLoading('WITHDRAW');
-    try {
-      await withdrawClaim(claim.claimId);
-      Alert.alert('Success', 'Claim withdrawn successfully');
-      loadData();
-    } catch (error: any) {
-      const msg = error.response?.data?.message || error.response?.data?.error;
-      const debugStr = msg || (error.message ? error.message : JSON.stringify(error));
-      Alert.alert('Error', debugStr);
-    } finally {
-      setActionLoading(null);
-    }
+    Alert.alert(
+      'Withdraw Claim',
+      'Are you sure you want to withdraw this claim?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Withdraw',
+          style: 'destructive',
+          onPress: async () => {
+            setActionLoading('WITHDRAW');
+            try {
+              await withdrawClaim(claim.claimId);
+              Alert.alert('Success', 'Claim withdrawn successfully');
+              loadData();
+            } catch (error: any) {
+              const msg = error.response?.data?.message || error.response?.data?.error;
+              const debugStr = msg || (error.message ? error.message : JSON.stringify(error));
+              Alert.alert('Error', debugStr);
+            } finally {
+              setActionLoading(null);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleRevokeApproval = async () => {

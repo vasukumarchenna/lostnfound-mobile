@@ -57,6 +57,21 @@ export default function CreatePostScreen() {
     loadCategories();
   }, []);
 
+  const resetForm = () => {
+    setTitle('');
+    setContent('');
+    setLocationText('');
+    setTags('');
+    setItemType('LOST');
+    setImages([]);
+    setLatitude(undefined);
+    setLongitude(undefined);
+    setBuildingName('');
+    setSelectedCategoryId(null);
+    setSelectedSubcategoryId(null);
+    setAttributes({});
+  };
+
   const selectedCategory = classificationTree.find(c => c.classification_id === selectedCategoryId);
   const subcategories = selectedCategory?.children || [];
   const selectedSubcategory = subcategories.find(c => c.classification_id === selectedSubcategoryId);
@@ -195,7 +210,8 @@ export default function CreatePostScreen() {
 
       await createPostApi(formData);
       Alert.alert('Success', 'Post created successfully!');
-      router.replace('/');
+      resetForm();
+      router.replace('/my-posts?from=create');
     } catch (error: any) {
       Alert.alert('Failed to Create Post', error.response?.data?.error || error.message);
     } finally {
@@ -279,50 +295,98 @@ export default function CreatePostScreen() {
           {activeAttributes.length > 0 && (
             <View style={styles.attributesContainer}>
               <Text style={styles.attributesHeader}>Item Details</Text>
-              {activeAttributes.map((attr) => (
-                <View key={attr.attribute_id} style={styles.attrInputBox}>
-                  <Text style={styles.attrLabel}>{attr.display_label || attr.name} {attr.is_required ? '*' : ''}</Text>
-                  {attr.data_type === 'BOOLEAN' ? (
-                    <View style={styles.typeRow}>
-                      <TouchableOpacity
-                        style={[styles.typeButton, attributes[attr.name] === true && styles.attrBoolActive]}
-                        onPress={() => handleAttributeChange(attr.name, true)}
-                      >
-                        <Text style={[styles.typeText, attributes[attr.name] === true && styles.catChipTextActive]}>Yes</Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[styles.typeButton, attributes[attr.name] === false && styles.attrBoolActive]}
-                        onPress={() => handleAttributeChange(attr.name, false)}
-                      >
-                        <Text style={[styles.typeText, attributes[attr.name] === false && styles.catChipTextActive]}>No</Text>
-                      </TouchableOpacity>
-                    </View>
-                  ) : attr.options && attr.options.length > 0 ? (
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
-                      {attr.options.map((opt) => (
+              {activeAttributes.map((attr, attrIdx) => {
+                const inputType = (attr.input_type || attr.data_type || 'TEXT').toUpperCase();
+                const isHeight = attr.name.toLowerCase().includes('height') || ((attr.display_label || '').toLowerCase().includes('height'));
+                let labelText = attr.display_label || attr.name;
+                if (isHeight && !labelText.toLowerCase().includes('cm')) {
+                  labelText = `${labelText} (cm)`;
+                }
+
+                let optionsList: any[] = [];
+                if (Array.isArray(attr.allowed_values)) {
+                  optionsList = attr.allowed_values;
+                } else if (typeof attr.allowed_values === 'string') {
+                  try {
+                    const parsed = JSON.parse(attr.allowed_values);
+                    if (Array.isArray(parsed)) optionsList = parsed;
+                  } catch (e) {}
+                } else if (Array.isArray(attr.options)) {
+                  optionsList = attr.options;
+                }
+
+                const isBoolean = inputType === 'BOOLEAN' || inputType === 'BOOL';
+                const isEnumOrSelect = inputType === 'ENUM' || inputType === 'SELECT' || inputType === 'DROPDOWN' || optionsList.length > 0;
+                const isNumber = inputType === 'NUMBER' || inputType === 'INT' || inputType === 'FLOAT';
+                const isDate = inputType === 'DATE' || inputType === 'DATETIME';
+
+                return (
+                  <View key={`attr_${attr.attribute_id || attr.name || attrIdx}`} style={styles.attrInputBox}>
+                    <Text style={styles.attrLabel}>
+                      {labelText} {attr.is_required ? '*' : ''}
+                    </Text>
+
+                    {isBoolean ? (
+                      <View style={styles.typeRow}>
                         <TouchableOpacity
-                          key={opt}
-                          style={[styles.subcatChip, attributes[attr.name] === opt && styles.subcatChipActive]}
-                          onPress={() => handleAttributeChange(attr.name, opt)}
+                          style={[styles.typeButton, attributes[attr.name] === true && styles.attrBoolActive]}
+                          onPress={() => handleAttributeChange(attr.name, true)}
                         >
-                          <Text style={[styles.subcatChipText, attributes[attr.name] === opt && styles.subcatChipTextActive]}>
-                            {opt}
+                          <Text style={[styles.typeText, attributes[attr.name] === true && styles.catChipTextActive]}>
+                            Yes
                           </Text>
                         </TouchableOpacity>
-                      ))}
-                    </ScrollView>
-                  ) : (
-                    <TextInput
-                      placeholder={`Enter ${(attr.display_label || attr.name).toLowerCase()}`}
-                      placeholderTextColor="#64748b"
-                      style={styles.input}
-                      value={attributes[attr.name] || ''}
-                      onChangeText={(val) => handleAttributeChange(attr.name, val)}
-                      keyboardType={attr.data_type === 'NUMBER' ? 'numeric' : 'default'}
-                    />
-                  )}
-                </View>
-              ))}
+                        <TouchableOpacity
+                          style={[styles.typeButton, attributes[attr.name] === false && styles.attrBoolActive]}
+                          onPress={() => handleAttributeChange(attr.name, false)}
+                        >
+                          <Text style={[styles.typeText, attributes[attr.name] === false && styles.catChipTextActive]}>
+                            No
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : isEnumOrSelect ? (
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryScroll}>
+                        {optionsList.map((opt: any, optIdx) => {
+                          const optLabel = typeof opt === 'object' && opt !== null
+                            ? String(opt.label ?? opt.value ?? JSON.stringify(opt))
+                            : String(opt);
+                          const optVal = typeof opt === 'object' && opt !== null
+                            ? (opt.value !== undefined ? opt.value : opt.label)
+                            : opt;
+                          const isSelected = attributes[attr.name] === optVal || attributes[attr.name] === optLabel;
+
+                          return (
+                            <TouchableOpacity
+                              key={`attr_${attr.attribute_id || attr.name}_opt_${optIdx}`}
+                              style={[styles.subcatChip, isSelected && styles.subcatChipActive]}
+                              onPress={() => handleAttributeChange(attr.name, optVal)}
+                            >
+                              <Text style={[styles.subcatChipText, isSelected && styles.subcatChipTextActive]}>
+                                {optLabel}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </ScrollView>
+                    ) : (
+                      <View style={styles.inputWithUnitContainer}>
+                        <TextInput
+                          placeholder={isHeight ? 'e.g. 175' : (isDate ? 'YYYY-MM-DD' : `Enter ${(attr.display_label || attr.name).toLowerCase()}`)}
+                          placeholderTextColor="#64748b"
+                          style={[styles.input, isHeight && { paddingRight: 45 }]}
+                          value={attributes[attr.name] !== undefined && attributes[attr.name] !== null ? String(attributes[attr.name]) : ''}
+                          onChangeText={(val) => handleAttributeChange(attr.name, isNumber ? (val === '' ? '' : Number(val) || val) : val)}
+                          keyboardType={isNumber || isHeight ? 'numeric' : 'default'}
+                        />
+                        {isHeight && (
+                          <Text style={styles.unitSuffix}>cm</Text>
+                        )}
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
             </View>
           )}
 
@@ -710,25 +774,19 @@ const styles = StyleSheet.create({
     marginBottom: 6,
     fontWeight: '500',
   },
-  typeRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  typeButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: '#0f172a',
-    borderWidth: 1,
-    borderColor: '#334155',
-  },
-  typeText: {
-    color: '#94a3b8',
-    fontSize: 14,
-    fontWeight: '600',
-  },
   attrBoolActive: {
     backgroundColor: '#3b82f6',
     borderColor: '#60a5fa',
+  },
+  inputWithUnitContainer: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
+  unitSuffix: {
+    position: 'absolute',
+    right: 16,
+    color: '#94a3b8',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

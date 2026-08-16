@@ -118,7 +118,6 @@ export default function MyPostsScreen() {
           renderItem={renderPost}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
-          estimatedItemSize={300}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Search size={48} color="#334155" />

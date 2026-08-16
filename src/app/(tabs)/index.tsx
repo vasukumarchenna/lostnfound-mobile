@@ -211,7 +211,6 @@ export default function FeedScreen() {
             keyExtractor={(item) => item.id}
             renderItem={renderPostItem}
             contentContainerStyle={styles.listContent}
-            estimatedItemSize={300}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" />
             }

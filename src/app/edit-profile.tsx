@@ -93,14 +93,14 @@ export default function EditProfileScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardWrapper type="scrollable" style={{ flex: 1 }} contentContainerStyle={styles.scrollContent}>
+      <KeyboardWrapper type="scrollable" style={styles.flexOne} contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <ArrowLeft size={24} color="#f8fafc" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Edit Profile</Text>
-          <View style={{ width: 24 }} />
+          <View style={styles.headerSpacer} />
         </View>
 
         <View style={styles.formGroup}>
@@ -182,6 +182,8 @@ export default function EditProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  flexOne: { flex: 1 },
+  headerSpacer: { width: 24 },
   safeArea: {
     flex: 1,
     backgroundColor: '#0f172a',

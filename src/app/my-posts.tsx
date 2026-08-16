@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   ActivityIndicator,
   Image,
@@ -13,6 +12,7 @@ import { fetchMyPosts } from '../services/postsApi';
 import { PostUI } from '../types/postTypes';
 import { ArrowLeft, MapPin, Search } from 'lucide-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { FlashList } from '@shopify/flash-list';
 
 export default function MyPostsScreen() {
   const router = useRouter();
@@ -104,7 +104,7 @@ export default function MyPostsScreen() {
           <ArrowLeft size={20} color="#f8fafc" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>My Posts</Text>
-        <View style={{ width: 40 }} />
+        <View style={styles.headerSpacer} />
       </View>
 
       {loading ? (
@@ -112,12 +112,13 @@ export default function MyPostsScreen() {
           <ActivityIndicator size="large" color="#3b82f6" />
         </View>
       ) : (
-        <FlatList
+        <FlashList
           data={posts}
           keyExtractor={(item) => item.id}
           renderItem={renderPost}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
+          estimatedItemSize={300}
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
               <Search size={48} color="#334155" />
@@ -131,6 +132,11 @@ export default function MyPostsScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerSpacer: { width: 40 },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0f172a',
+  },
   container: {
     flex: 1,
     backgroundColor: '#0f172a',

@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
-  FlatList,
   TextInput,
   TouchableOpacity,
   Image,
@@ -17,49 +16,45 @@ import { getStoredUser, logoutApi, UserAuthData } from '../../services/authApi';
 import { PostUI } from '../../types/postTypes';
 import { formatRelativeTime } from '../../utils/time';
 import { Search, MapPin, Plus, LogOut, ShieldCheck, Tag, Filter } from 'lucide-react-native';
+import { useQuery } from '@tanstack/react-query';
+import { FlashList } from '@shopify/flash-list';
 
 export default function FeedScreen() {
   const router = useRouter();
-  const [posts, setPosts] = useState<PostUI[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [filterType, setFilterType] = useState<'ALL' | 'LOST' | 'FOUND'>('ALL');
   const [searchQuery, setSearchQuery] = useState('');
-  const [user, setUser] = useState<UserAuthData | null>(null);
 
-  const loadData = useCallback(async () => {
-    try {
+  const {
+    data: posts = [],
+    isLoading: loading,
+    isRefetching: refreshing,
+    refetch,
+  } = useQuery({
+    queryKey: ['posts', filterType, searchQuery],
+    queryFn: async () => {
       const stored = await getStoredUser();
       if (!stored || !stored.token) {
         router.replace('/auth/login');
-        return;
+        throw new Error('Unauthorized');
       }
-      setUser(stored);
-
+      
       const params: any = {};
       if (filterType !== 'ALL') params.item_type = filterType;
       if (searchQuery.trim()) params.search = searchQuery.trim();
 
-      const data = await fetchPosts(params);
-      setPosts(data);
-    } catch (e: any) {
-      console.warn('Failed to load posts', e);
-      if (e?.response?.status === 401) {
-        router.replace('/auth/login');
+      try {
+        return await fetchPosts(params);
+      } catch (e: any) {
+        if (e?.response?.status === 401) {
+          router.replace('/auth/login');
+        }
+        throw e;
       }
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [filterType, searchQuery, router]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+    },
+  });
 
   const onRefresh = () => {
-    setRefreshing(true);
-    loadData();
+    refetch();
   };
 
   const handleLogout = async () => {
@@ -172,7 +167,6 @@ export default function FeedScreen() {
             value={searchQuery}
             onChangeText={setSearchQuery}
             returnKeyType="search"
-            onSubmitEditing={loadData}
           />
         </View>
 
@@ -212,11 +206,12 @@ export default function FeedScreen() {
             <ActivityIndicator size="large" color="#3b82f6" />
           </View>
         ) : (
-          <FlatList
+          <FlashList
             data={posts}
             keyExtractor={(item) => item.id}
             renderItem={renderPostItem}
             contentContainerStyle={styles.listContent}
+            estimatedItemSize={300}
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3b82f6" />
             }

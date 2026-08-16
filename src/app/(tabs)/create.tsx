@@ -228,7 +228,7 @@ export default function CreatePostScreen() {
             <ArrowLeft size={20} color="#f8fafc" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Create New Post</Text>
-          <View style={{ width: 40 }} />
+          <View style={styles.headerSpacer} />
         </View>
           {/* Item Type Selector */}
           <Text style={styles.label}>Item Type</Text>
@@ -501,6 +501,7 @@ export default function CreatePostScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerSpacer: { width: 40 },
   safeArea: {
     flex: 1,
     backgroundColor: '#0f172a',

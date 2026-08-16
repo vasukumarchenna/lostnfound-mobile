@@ -1,6 +1,6 @@
 import { useRouter, useFocusEffect } from 'expo-router';
 import { ArrowLeft, Check, CheckCheck, KeyRound, MessageSquare, Send, ShieldCheck, X } from 'lucide-react-native';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -28,12 +28,26 @@ import {
   verifyHandoverOtp
 } from '../../services/claimsApi';
 import { ChatMessageUI, ClaimUI } from '../../types/claimTypes';
+import { useQuery } from '@tanstack/react-query';
 
 export default function ClaimsScreen() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<'RECEIVED' | 'MY_CLAIMS'>('RECEIVED');
-  const [claims, setClaims] = useState<ClaimUI[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: claims = [],
+    isLoading: loading,
+    refetch: loadClaims
+  } = useQuery({
+    queryKey: ['claims', activeTab],
+    queryFn: async () => {
+      if (activeTab === 'RECEIVED') {
+        return fetchReceivedClaims();
+      } else {
+        return fetchMyClaims();
+      }
+    }
+  });
+
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // Active Chat Modal State
@@ -77,25 +91,6 @@ export default function ClaimsScreen() {
       return `${day}/${month}/${year}`;
     }
   };
-
-  const loadClaims = useCallback(async () => {
-    setLoading(true);
-    try {
-      if (activeTab === 'RECEIVED') {
-        const data = await fetchReceivedClaims();
-        setClaims(data);
-      } else {
-        const data = await fetchMyClaims();
-        setClaims(data);
-      }
-    } catch (e) {
-      console.warn('Failed to load claims', e);
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab]);
-
-
   useFocusEffect(
     useCallback(() => {
       loadClaims();
@@ -329,7 +324,7 @@ export default function ClaimsScreen() {
             <ArrowLeft size={20} color="#f8fafc" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Claim Review Center</Text>
-          <View style={{ width: 40 }} />
+          <View style={styles.headerSpacer} />
         </View>
 
         {/* Tab Row */}
@@ -382,7 +377,7 @@ export default function ClaimsScreen() {
           <SafeAreaView style={styles.modalSafeArea}>
             <KeyboardWrapper type="fixed-bottom" style={styles.modalContainer}>
               <View style={styles.modalHeader}>
-                <TouchableOpacity onPress={() => setActiveChatClaim(null)} style={{ marginRight: 12 }}>
+                <TouchableOpacity onPress={() => setActiveChatClaim(null)} style={styles.chatBackButton}>
                   <ArrowLeft size={24} color="#f8fafc" />
                 </TouchableOpacity>
                 <Text style={styles.modalTitle} numberOfLines={1}>
@@ -417,8 +412,8 @@ export default function ClaimsScreen() {
                       <Text style={styles.chatMessageText}>{msg.message}</Text>
 
                       {msg.isMe && (
-                        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 4 }}>
-                          <Text style={{ fontSize: 10, color: '#bae6fd', marginRight: 4 }}>
+                        <View style={styles.messageFooterRow}>
+                          <Text style={styles.messageTimestampText}>
                             {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </Text>
                           {msg.seenAt ? (
@@ -464,7 +459,7 @@ export default function ClaimsScreen() {
         >
           <KeyboardWrapper type="modal" style={styles.overlayContainer}>
             <View style={styles.otpModalCard}>
-              <KeyRound size={32} color="#f59e0b" style={{ alignSelf: 'center', marginBottom: 10 }} />
+              <KeyRound size={32} color="#f59e0b" style={styles.otpModalIcon} />
               <Text style={styles.otpTitle}>Enter Handover OTP</Text>
               <Text style={styles.otpSubtitle}>Ask the post owner for their 6-digit OTP code</Text>
 
@@ -507,6 +502,11 @@ export default function ClaimsScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerSpacer: { width: 40 },
+  chatBackButton: { marginRight: 12 },
+  messageFooterRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 2 },
+  messageTimestampText: { fontSize: 10, color: '#bae6fd', marginRight: 4 },
+  otpModalIcon: { alignSelf: 'center', marginBottom: 10 },
   safeArea: {
     flex: 1,
     backgroundColor: '#0f172a',

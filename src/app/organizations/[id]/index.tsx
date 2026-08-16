@@ -68,14 +68,14 @@ export default function OrganizationDetailsScreen() {
   const isAdmin = org.role === 'ORG_ADMIN' || org.role === 'ORG_MODERATOR';
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0f172a' }}>
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <ArrowLeft size={20} color="#f8fafc" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Organization Details</Text>
-          <View style={{ width: 40 }} />
+          <View style={styles.headerRightPlaceholder} />
         </View>
 
         <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -182,6 +182,16 @@ export default function OrganizationDetailsScreen() {
 }
 
 const styles = StyleSheet.create({
+  iconMargin: {
+    marginRight: 4,
+  },
+  headerRightPlaceholder: {
+    width: 40,
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0f172a',
+  },
   container: { flex: 1, backgroundColor: '#0f172a' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
   backButton: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#1e293b', alignItems: 'center', justifyContent: 'center' },

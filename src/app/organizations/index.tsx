@@ -57,14 +57,14 @@ export default function OrganizationsIndex() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0f172a' }}>
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <ArrowLeft size={20} color="#f8fafc" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Organizations</Text>
-          <View style={{ width: 40 }} />
+          <View style={styles.headerRightPlaceholder} />
         </View>
 
         <View style={styles.tabContainer}>
@@ -113,6 +113,16 @@ export default function OrganizationsIndex() {
 }
 
 const styles = StyleSheet.create({
+  iconMargin: {
+    marginRight: 4,
+  },
+  headerRightPlaceholder: {
+    width: 40,
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0f172a',
+  },
   container: { flex: 1, backgroundColor: '#0f172a' },
   header: {
     flexDirection: 'row',

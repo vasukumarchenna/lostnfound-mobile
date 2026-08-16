@@ -32,14 +32,14 @@ export default function CreateOrganizationScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0f172a' }}>
+    <SafeAreaView style={styles.safeArea}>
       <KeyboardWrapper type="scrollable" style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <ArrowLeft size={20} color="#f8fafc" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>New Organization</Text>
-          <View style={{ width: 40 }} />
+          <View style={styles.headerRightPlaceholder} />
         </View>
 
         <View style={styles.form}>
@@ -94,6 +94,16 @@ export default function CreateOrganizationScreen() {
 }
 
 const styles = StyleSheet.create({
+  iconMargin: {
+    marginRight: 4,
+  },
+  headerRightPlaceholder: {
+    width: 40,
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0f172a',
+  },
   container: { flex: 1, backgroundColor: '#0f172a' },
   header: {
     flexDirection: 'row',

@@ -56,7 +56,7 @@ export default function MembersScreen() {
         <Text style={styles.name}>{item.fullName}</Text>
         <Text style={styles.email}>{item.email}</Text>
         <View style={styles.roleBadge}>
-          <ShieldAlert size={12} color="#8b5cf6" style={{ marginRight: 4 }} />
+          <ShieldAlert size={12} color="#8b5cf6" style={styles.iconMargin} />
           <Text style={styles.roleText}>{item.role?.replace('ORG_', '') || 'MEMBER'}</Text>
         </View>
       </View>
@@ -69,14 +69,14 @@ export default function MembersScreen() {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#0f172a' }}>
+    <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <ArrowLeft size={20} color="#f8fafc" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Members</Text>
-          <View style={{ width: 40 }} />
+          <View style={styles.headerRightPlaceholder} />
         </View>
 
         {loading ? (
@@ -103,6 +103,16 @@ export default function MembersScreen() {
 }
 
 const styles = StyleSheet.create({
+  iconMargin: {
+    marginRight: 4,
+  },
+  headerRightPlaceholder: {
+    width: 40,
+  },
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#0f172a',
+  },
   container: { flex: 1, backgroundColor: '#0f172a' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#1e293b' },
   backButton: { width: 40, height: 40, borderRadius: 12, backgroundColor: '#1e293b', alignItems: 'center', justifyContent: 'center' },

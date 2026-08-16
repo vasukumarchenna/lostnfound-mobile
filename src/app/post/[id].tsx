@@ -59,20 +59,20 @@ const CommentItem = ({ node, depth = 0, onReply, renderReplyInput }: { node: Com
   const hasChildren = node.children && node.children.length > 0;
   
   return (
-    <View style={{ marginLeft: currentDepth > 0 ? 16 : 0, borderLeftWidth: currentDepth > 0 ? 2 : 0, borderLeftColor: '#334155', paddingLeft: currentDepth > 0 ? 12 : 0, marginTop: currentDepth > 0 ? 8 : 0 }}>
+    <View style={[styles.commentNodeContainer, currentDepth > 0 && styles.commentNodeIndented]}>
       <View style={styles.commentCard}>
         <View style={styles.commentHeader}>
           <Text style={styles.commentAuthor}>{node.userFullName}</Text>
           <Text style={styles.commentDate}>{formatRelativeTime(node.createdAt)}</Text>
         </View>
         <Text style={styles.commentContent}>{node.content}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+        <View style={styles.commentActionsRow}>
           <TouchableOpacity style={styles.replyButton} onPress={() => onReply(node.commentId, node.userFullName)}>
             <Text style={styles.replyButtonText}>Reply</Text>
           </TouchableOpacity>
           {hasChildren && (
             <TouchableOpacity style={styles.replyButton} onPress={() => setIsExpanded(!isExpanded)}>
-              <Text style={[styles.replyButtonText, { color: '#94a3b8' }]}>
+              <Text style={[styles.replyButtonText, styles.textMuted]}>
                 {isExpanded ? 'Hide replies' : `See replies (${node.children.length})`}
               </Text>
             </TouchableOpacity>
@@ -187,11 +187,11 @@ export default function PostDetailScreen() {
             {post.title}
           </Text>
           {isOwner ? (
-            <TouchableOpacity style={{ width: 40, alignItems: 'center' }} onPress={() => router.push(`/edit-post/${id}` as any)}>
+            <TouchableOpacity style={styles.headerRightAction} onPress={() => router.push(`/edit-post/${id}` as any)}>
               <Edit3 size={20} color="#f8fafc" />
             </TouchableOpacity>
           ) : (
-            <View style={{ width: 40 }} />
+            <View style={styles.headerRightPlaceholder} />
           )}
         </View>
 
@@ -288,9 +288,9 @@ export default function PostDetailScreen() {
             {isFound && !isOwner && post.status === 'OPEN' && (
               <View style={styles.claimSection}>
                 {post.hasActiveClaim ? (
-                  <View style={[styles.claimButton, { backgroundColor: '#475569' }]}>
+                  <View style={[styles.claimButton, styles.claimButtonDisabled]}>
                     <ShieldCheck size={20} color="#94a3b8" />
-                    <Text style={[styles.claimButtonText, { color: '#94a3b8' }]}>Already Claimed</Text>
+                    <Text style={[styles.claimButtonText, styles.textMuted]}>Already Claimed</Text>
                   </View>
                 ) : !showClaimBox ? (
                   <TouchableOpacity
@@ -422,6 +422,33 @@ const styles = StyleSheet.create({
     backgroundColor: '#0f172a',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  commentNodeContainer: {
+  },
+  commentNodeIndented: {
+    marginLeft: 16,
+    borderLeftWidth: 2,
+    borderLeftColor: '#334155',
+    paddingLeft: 12,
+    marginTop: 8,
+  },
+  commentActionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  textMuted: {
+    color: '#94a3b8',
+  },
+  headerRightAction: {
+    width: 40,
+    alignItems: 'center',
+  },
+  headerRightPlaceholder: {
+    width: 40,
+  },
+  claimButtonDisabled: {
+    backgroundColor: '#475569',
   },
   header: {
     flexDirection: 'row',

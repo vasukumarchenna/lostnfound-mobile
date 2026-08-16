@@ -20,8 +20,13 @@ export default function OrganizationsIndex() {
     setLoading(true);
     try {
       if (tab === 'ALL') {
-        const data = await listOrganizations();
-        setOrgs(data);
+        const [allData, myData] = await Promise.all([
+          listOrganizations(),
+          listMyOrganizations()
+        ]);
+        const myOrgIds = new Set(myData.map(org => org.organizationId));
+        const filteredData = allData.filter(org => !myOrgIds.has(org.organizationId));
+        setOrgs(filteredData);
       } else {
         const data = await listMyOrganizations();
         setOrgs(data);
@@ -45,7 +50,9 @@ export default function OrganizationsIndex() {
           <Text style={styles.orgType}>{item.type}</Text>
         </View>
         <View style={styles.policyBadge}>
-          <Text style={styles.policyText}>{item.joinPolicy?.replace('_', ' ') || 'OPEN'}</Text>
+          <Text style={styles.policyText}>
+            {item.joinPolicy?.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ') || 'Open'}
+          </Text>
         </View>
       </View>
       {item.role && (

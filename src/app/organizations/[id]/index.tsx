@@ -100,11 +100,17 @@ export default function OrganizationDetailsScreen() {
           {!org.role && (
             <View style={styles.joinSection}>
               <Text style={styles.joinText}>You are not a member of this organization.</Text>
-              <TouchableOpacity style={styles.primaryButton} onPress={handleJoin}>
-                <Text style={styles.primaryButtonText}>
-                  {org.joinPolicy === 'OPEN' ? 'Join Now' : 'Request to Join'}
+              {org.joinPolicy === 'INVITE_ONLY' ? (
+                <Text style={[styles.joinText, { color: '#fbbf24', marginTop: 8 }]}>
+                  Please reach out to the organization to join.
                 </Text>
-              </TouchableOpacity>
+              ) : (
+                <TouchableOpacity style={styles.primaryButton} onPress={handleJoin}>
+                  <Text style={styles.primaryButtonText}>
+                    {org.joinPolicy === 'OPEN' ? 'Join Now' : 'Request to Join'}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
 

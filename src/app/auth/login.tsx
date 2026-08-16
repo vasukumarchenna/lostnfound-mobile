@@ -4,6 +4,7 @@ import { useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   StyleSheet,
   Text,
   TextInput,
@@ -158,6 +159,25 @@ export default function AuthScreen() {
           </TouchableOpacity>
         </View>
 
+        {!isLogin && (
+          <Text style={styles.legalText}>
+            By creating an account, you agree to our{' '}
+            <Text 
+              style={styles.legalLink} 
+              onPress={() => Linking.openURL('https://yourdomain.com/terms-of-service')}
+            >
+              Terms of Service
+            </Text>
+            {' '}and{' '}
+            <Text 
+              style={styles.legalLink} 
+              onPress={() => Linking.openURL('https://yourdomain.com/privacy-policy')}
+            >
+              Privacy Policy
+            </Text>.
+          </Text>
+        )}
+
         <TouchableOpacity
           style={[styles.submitButton, loading && styles.buttonDisabled]}
           disabled={loading}
@@ -263,6 +283,19 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  legalText: {
+    color: '#94a3b8',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: -4,
+    marginBottom: 12,
+    paddingHorizontal: 10,
+    lineHeight: 18,
+  },
+  legalLink: {
+    color: '#38bdf8',
+    textDecorationLine: 'underline',
   },
   submitButtonText: {
     color: '#ffffff',

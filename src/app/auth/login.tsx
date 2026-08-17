@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { Eye, EyeOff, Lock, Mail, Phone, ShieldCheck, User } from 'lucide-react-native';
+import { Eye, EyeOff, Lock, Mail, Phone, ShieldCheck, User, CheckSquare, Square } from 'lucide-react-native';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -24,6 +24,7 @@ export default function AuthScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [legalModalVisible, setLegalModalVisible] = useState(false);
   const [legalModalType, setLegalModalType] = useState<'privacy' | 'terms'>('privacy');
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   // Form Fields
   const [email, setEmail] = useState('');
@@ -50,6 +51,12 @@ export default function AuthScreen() {
           return;
         }
 
+        if (!agreedToTerms) {
+          Alert.alert('Error', 'You must agree to the Terms of Service and Privacy Policy to create an account');
+          setLoading(false);
+          return;
+        }
+
         await signupApi({
           full_name: fullName,
           username,
@@ -58,8 +65,8 @@ export default function AuthScreen() {
           phone_number: phone,
         });
 
-        Alert.alert('Success', 'Account created! Please log in.');
-        setIsLogin(true);
+        await loginApi(email, password);
+        router.replace('/');
       }
     } catch (error: any) {
       console.log(error);
@@ -165,28 +172,41 @@ export default function AuthScreen() {
         </View>
 
         {!isLogin && (
-          <Text style={styles.legalText}>
-            By creating an account, you agree to our{' '}
-            <Text 
-              style={styles.legalLink} 
-              onPress={() => {
-                setLegalModalType('terms');
-                setLegalModalVisible(true);
-              }}
-            >
-              Terms of Service
+          <TouchableOpacity 
+            style={styles.checkboxContainer} 
+            onPress={() => setAgreedToTerms(!agreedToTerms)}
+            activeOpacity={0.8}
+          >
+            <View style={styles.checkboxIcon}>
+              {agreedToTerms ? (
+                <CheckSquare size={20} color="#3b82f6" />
+              ) : (
+                <Square size={20} color="#94a3b8" />
+              )}
+            </View>
+            <Text style={styles.legalTextCheckbox}>
+              I agree to the{' '}
+              <Text 
+                style={styles.legalLink} 
+                onPress={() => {
+                  setLegalModalType('terms');
+                  setLegalModalVisible(true);
+                }}
+              >
+                Terms of Service
+              </Text>
+              {' '}and{' '}
+              <Text 
+                style={styles.legalLink} 
+                onPress={() => {
+                  setLegalModalType('privacy');
+                  setLegalModalVisible(true);
+                }}
+              >
+                Privacy Policy
+              </Text>.
             </Text>
-            {' '}and{' '}
-            <Text 
-              style={styles.legalLink} 
-              onPress={() => {
-                setLegalModalType('privacy');
-                setLegalModalVisible(true);
-              }}
-            >
-              Privacy Policy
-            </Text>.
-          </Text>
+          </TouchableOpacity>
         )}
 
         <TouchableOpacity
@@ -377,6 +397,22 @@ const styles = StyleSheet.create({
     marginTop: -4,
     marginBottom: 12,
     paddingHorizontal: 10,
+    lineHeight: 18,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  checkboxIcon: {
+    marginRight: 10,
+    marginTop: 2,
+  },
+  legalTextCheckbox: {
+    flex: 1,
+    color: '#94a3b8',
+    fontSize: 13,
     lineHeight: 18,
   },
   legalLink: {

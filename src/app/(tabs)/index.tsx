@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   StatusBar,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { fetchPosts } from '../../services/postsApi';
@@ -58,8 +59,17 @@ export default function FeedScreen() {
   };
 
   const handleLogout = async () => {
-    await logoutApi();
-    router.replace('/auth/login');
+    Alert.alert('Logout', 'Are you sure you want to log out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          await logoutApi();
+          router.replace('/auth/login');
+        },
+      },
+    ]);
   };
 
   const renderPostItem = ({ item }: { item: PostUI }) => {
